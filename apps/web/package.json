@@ -1,0 +1,37 @@
+{
+  "name": "@launchblitz/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "lint": "eslint . --max-warnings 0",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@launchblitz/db": "0.0.0",
+    "@launchblitz/ui": "0.0.0",
+    "@launchblitz/workflow": "0.0.0",
+    "@clerk/nextjs": "latest",
+    "@stripe/stripe-js": "latest",
+    "@supabase/supabase-js": "latest",
+    "ai": "latest",
+    "drizzle-orm": "latest",
+    "next": "^16.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "stripe": "latest"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.11",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.39.0",
+    "eslint-config-next": "^16.0.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.11",
+    "vitest": "latest"
+  }
+}
