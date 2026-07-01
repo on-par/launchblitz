@@ -16,8 +16,22 @@ domain is **launchblitz.online** (reserved for future DNS work).
 ## First steps
 
 1. Install dependencies with `npm install`.
-2. Copy `.env.example` into `.env.local` where needed.
+2. Copy `.env.example` into `.env.local` at the repo root.
 3. Start the app with `npm run dev`.
+
+## MVP direction
+
+The current MVP target is:
+
+- document the product clearly
+- make the web app deployable
+- prove the landing page and signed-in workflow shell
+- defer GitHub export until after the MVP is live
+
+See:
+
+- [docs/mvp.md](docs/mvp.md)
+- [docs/deployment.md](docs/deployment.md)
 
 ## Scripts
 
@@ -29,3 +43,14 @@ Run from the repo root; all fan out across the workspace via Turborepo:
 - `npm run typecheck` - `tsc --noEmit` across the workspace
 - `npm run test` - Vitest unit tests
 - `npm run test:e2e` - Playwright smoke tests (boots the app automatically)
+
+## Deployment
+
+Recommended MVP stack:
+
+- `Vercel` for `apps/web`
+- `Neon Postgres` or `Supabase Postgres`
+- `Clerk` for auth
+- `Stripe` for billing
+
+Use `apps/web` as the Vercel project root. Full setup steps live in [docs/deployment.md](docs/deployment.md).

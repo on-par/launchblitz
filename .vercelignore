@@ -1,0 +1,12 @@
+.git
+.vercel
+.turbo
+node_modules
+apps/web/.next
+packages/*/node_modules
+packages/*/dist
+coverage
+playwright-report
+test-results
+.env
+.env*

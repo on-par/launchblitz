@@ -1,0 +1,9 @@
+<svg width="228" height="48" viewBox="0 0 228 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="48" height="48" rx="15" fill="#FF4D00"/>
+  <rect x="1" y="1" width="46" height="46" rx="14" stroke="white" stroke-opacity="0.12"/>
+  <path d="M14 11H20V31H31V37H14V11Z" fill="black"/>
+  <path d="M24 11H34C38.4183 11 42 14.5817 42 19C42 22.0874 40.25 24.766 37.6875 26.0938L42 37H35.3125L31.6875 27.4375H30V37H24V11ZM30 16.5V22.0625H33.375C35.339 22.0625 36.9375 20.8351 36.9375 19.2812C36.9375 17.7274 35.339 16.5 33.375 16.5H30Z" fill="black"/>
+  <text x="62" y="31" fill="white" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="800" letter-spacing="-0.06em">
+    LaunchBlitz
+  </text>
+</svg>

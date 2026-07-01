@@ -7,7 +7,7 @@
     "build": "next build",
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run --passWithNoTests",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "next typegen && tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@launchblitz/db": "0.0.0",
