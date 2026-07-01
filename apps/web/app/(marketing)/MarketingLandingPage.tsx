@@ -13,7 +13,7 @@ const workflowSteps = [
     body: "Give LaunchBlitz the idea in plain English and begin the session without stitching together a dozen tools by hand.",
   },
   {
-    eyebrow: "Agents do the research",
+    eyebrow: "Guided research",
     title: "LaunchBlitz structures the heavy early-stage business work into one guided sequence.",
     body: "You get Market Validation, Customer Avatar, Copy Deck, Landing Page Export, and a Launch Kit in one structured flow.",
   },
