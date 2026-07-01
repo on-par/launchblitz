@@ -5,5 +5,5 @@ test("landing page shows the MVP hero and primary CTA", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
     "Launch your business idea",
   );
-  await expect(page.getByRole("button", { name: "Start for free" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Start for free" })).toBeVisible();
 });

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { LaunchBlitzWordmark } from "../../components/LaunchBlitzWordmark";
+import { START_BUILD_PATH } from "../../lib/session";
 
 const painPoints = ["Too many tools.", "Hours of research.", "Blank page paralysis."];
 
@@ -38,6 +39,7 @@ const pricingTiers = [
     price: "$0",
     details: "1 build",
     cta: "Start free",
+    action: "start" as const,
     featured: false,
   },
   {
@@ -45,6 +47,7 @@ const pricingTiers = [
     price: "$29/mo",
     details: "10 builds + Lovable export",
     cta: "Start free",
+    action: "start" as const,
     featured: true,
   },
   {
@@ -52,6 +55,7 @@ const pricingTiers = [
     price: "$79/mo",
     details: "Unlimited + team",
     cta: "Join waitlist",
+    action: "waitlist" as const,
     featured: false,
   },
 ];
@@ -86,6 +90,23 @@ const faqs = [
 
 function Spark() {
   return <span aria-hidden="true" className="text-lg leading-none text-[#FF4D00]">*</span>;
+}
+
+// Primary CTA: routes into the authenticated start-build flow (issue #7).
+// Anonymous visitors are gated to sign-in with a return path by the middleware;
+// signed-in visitors land straight on the builds surface.
+function StartBuildLink({
+  label,
+  className,
+}: {
+  label: string;
+  className: string;
+}) {
+  return (
+    <Link className={className} href={START_BUILD_PATH}>
+      {label}
+    </Link>
+  );
 }
 
 function InlineWaitlist({
@@ -175,9 +196,9 @@ export function MarketingLandingPage() {
               FAQ
             </a>
           </nav>
-          <InlineWaitlist
-            triggerClassName="hidden rounded-full bg-[#FF4D00] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e94700] md:inline-flex"
-            triggerLabel="Start free"
+          <StartBuildLink
+            className="hidden items-center rounded-full bg-[#FF4D00] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e94700] md:inline-flex"
+            label="Start free"
           />
         </div>
       </header>
@@ -202,9 +223,9 @@ export function MarketingLandingPage() {
               with a single guided workflow.
             </p>
             <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center">
-              <InlineWaitlist
-                triggerClassName="inline-flex h-12 items-center justify-center rounded-full bg-[#FF4D00] px-6 text-sm font-semibold text-white transition hover:bg-[#e94700]"
-                triggerLabel="Start for free"
+              <StartBuildLink
+                className="inline-flex h-12 items-center justify-center rounded-full bg-[#FF4D00] px-6 text-sm font-semibold text-white transition hover:bg-[#e94700]"
+                label="Start for free"
               />
               <a
                 className="inline-flex h-12 items-center justify-center rounded-full border border-white/14 bg-white/[0.03] px-6 text-sm font-semibold text-white transition hover:border-white/28 hover:bg-white/[0.06]"
@@ -367,14 +388,25 @@ export function MarketingLandingPage() {
                   {tier.details}
                 </p>
                 <div className="mt-8">
-                  <InlineWaitlist
-                    triggerClassName={`inline-flex h-12 items-center justify-center rounded-full px-5 text-sm font-semibold transition ${
-                      tier.featured
-                        ? "bg-black text-white hover:bg-[#111]"
-                        : "bg-white text-black hover:bg-white/85"
-                    }`}
-                    triggerLabel={tier.cta}
-                  />
+                  {tier.action === "start" ? (
+                    <StartBuildLink
+                      className={`inline-flex h-12 items-center justify-center rounded-full px-5 text-sm font-semibold transition ${
+                        tier.featured
+                          ? "bg-black text-white hover:bg-[#111]"
+                          : "bg-white text-black hover:bg-white/85"
+                      }`}
+                      label={tier.cta}
+                    />
+                  ) : (
+                    <InlineWaitlist
+                      triggerClassName={`inline-flex h-12 items-center justify-center rounded-full px-5 text-sm font-semibold transition ${
+                        tier.featured
+                          ? "bg-black text-white hover:bg-[#111]"
+                          : "bg-white text-black hover:bg-white/85"
+                      }`}
+                      triggerLabel={tier.cta}
+                    />
+                  )}
                 </div>
               </article>
             ))}
@@ -412,9 +444,9 @@ export function MarketingLandingPage() {
             Your next business is one session away.
           </h2>
           <div className="mt-10">
-            <InlineWaitlist
-              triggerClassName="inline-flex h-12 items-center justify-center rounded-full bg-[#FF4D00] px-6 text-sm font-semibold text-white transition hover:bg-[#e94700]"
-              triggerLabel="Start free"
+            <StartBuildLink
+              className="inline-flex h-12 items-center justify-center rounded-full bg-[#FF4D00] px-6 text-sm font-semibold text-white transition hover:bg-[#e94700]"
+              label="Start free"
             />
           </div>
         </div>
