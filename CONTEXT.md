@@ -12,6 +12,10 @@ _Avoid_: Build packet, launch kit (as the umbrella name)
 A persisted founder project — one idea worked from capture through to a launch packet. This is the unit counted by plan (Free = 1 build, Builder = 10 builds), listed at `/builds`, and resumable across sittings.
 _Avoid_: Project, workspace (as the countable unit)
 
+**Seed idea**:
+The founder's raw business idea, captured verbatim as the starting input of a **Build** (persisted as `seedIdea`). Normalized during the Idea capture stage.
+_Avoid_: Prompt, brief (as the raw-input name)
+
 **Session**:
 One guided working run through the stages of a **Build**. A build can span multiple sessions (a founder can resume it), but the MVP promise is that a build is finishable in a single session.
 _Avoid_: Run, job
