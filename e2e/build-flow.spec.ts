@@ -1,4 +1,11 @@
 import { expect, test } from "@playwright/test";
+import { signIn } from "./support/session";
+
+// The dashboard shell is behind the session gate (issue #7), so these tests
+// authenticate before visiting the signed-in surface.
+test.beforeEach(async ({ context }) => {
+  await signIn(context);
+});
 
 test("dashboard shell renders build sessions", async ({ page }) => {
   await page.goto("/dashboard");
