@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { StageCard } from "@launchblitz/ui";
 
 const builds = [
@@ -25,9 +26,12 @@ export default function BuildsPage() {
             your launch packet moving without bouncing between tools.
           </p>
         </div>
-        <button className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e94700]">
+        <Link
+          href="/builds/new"
+          className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e94700]"
+        >
           Start new build
-        </button>
+        </Link>
       </header>
 
       <div className="grid gap-4 md:grid-cols-3">
