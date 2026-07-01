@@ -27,6 +27,12 @@ test("founder creates a build from an idea and lands on the session", async ({ p
   await page.reload();
   await expect(page.getByRole("heading", { level: 1, name: "Idea capture" })).toBeVisible();
   await expect(page.getByText(idea)).toBeVisible();
+
+  // The new build shows up in the builds list (real per-user query, not mock data).
+  await page.goto("/builds");
+  await expect(
+    page.getByText("A subscription box of small-batch hot sauces"),
+  ).toBeVisible();
 });
 
 test("empty idea submission is rejected with guidance", async ({ page }) => {

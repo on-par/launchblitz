@@ -1,18 +1,42 @@
 import Link from "next/link";
 import { StageCard } from "@launchblitz/ui";
+import { getCurrentUserId } from "../../../lib/auth";
+import { getBuildsRepository } from "../../../lib/builds";
 
-const builds = [
-  { name: "Creator tax planner", stage: "Avatar", status: "Active" },
-  { name: "Pet supplement landing page", stage: "Lovable export", status: "Review" },
+// Reads per-user builds, so it must be rendered per request (never prerendered).
+export const dynamic = "force-dynamic";
+
+const stageLabels = [
+  "Idea",
+  "Market",
+  "Avatar",
+  "Positioning",
+  "Copy",
+  "Brand",
+  "Export",
+  "Launch",
 ];
 
-const metrics = [
-  { label: "Active sessions", value: "02" },
-  { label: "Average session", value: "47 min" },
-  { label: "Exports ready", value: "05" },
-];
+function stageLabel(currentStage: number): string {
+  return stageLabels[currentStage] ?? `Stage ${currentStage + 1}`;
+}
 
-export default function BuildsPage() {
+function titleFor(seedIdea: string): string {
+  const trimmed = seedIdea.trim();
+  return trimmed.length > 80 ? `${trimmed.slice(0, 79)}…` : trimmed;
+}
+
+export default async function BuildsPage() {
+  const userId = await getCurrentUserId();
+  const builds = userId ? await getBuildsRepository().listByUser(userId) : [];
+
+  const activeCount = builds.filter((build) => build.status === "active").length;
+  const metrics = [
+    { label: "Total builds", value: String(builds.length).padStart(2, "0") },
+    { label: "Active", value: String(activeCount).padStart(2, "0") },
+    { label: "In review", value: String(builds.length - activeCount).padStart(2, "0") },
+  ];
+
   return (
     <section className="space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
@@ -60,14 +84,42 @@ export default function BuildsPage() {
           </div>
           <p className="text-sm text-[#CFD8DC]/58">Founder-led reviews with export-ready outputs</p>
         </div>
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-        {builds.map((build) => (
-          <div key={build.name} className="rounded-[1.6rem] border border-white/8 bg-white/[0.03] p-1">
-            <StageCard description={`${build.status} at ${build.stage}`} title={build.name} />
+
+        {builds.length === 0 ? (
+          <div className="mt-5 rounded-[1.6rem] border border-dashed border-white/12 bg-white/[0.02] p-8 text-center">
+            <p className="text-sm leading-6 text-[#CFD8DC]/70">
+              No builds yet. Drop in your first idea and LaunchBlitz starts working it into a
+              launch packet.
+            </p>
+            <Link
+              href="/builds/new"
+              className="mt-5 inline-flex rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e94700]"
+            >
+              Start your first build
+            </Link>
           </div>
-        ))}
-        </div>
+        ) : (
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            {builds.map((build) => (
+              <Link
+                key={build.id}
+                href={`/dashboard/builds/${build.id}`}
+                className="block rounded-[1.6rem] border border-white/8 bg-white/[0.03] p-1 transition hover:border-[#FF4D00]/30"
+              >
+                <StageCard
+                  description={`${formatStatus(build.status)} · ${stageLabel(build.currentStage)}`}
+                  title={titleFor(build.seedIdea)}
+                />
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
+}
+
+function formatStatus(status: string): string {
+  if (!status) return "";
+  return status.charAt(0).toUpperCase() + status.slice(1);
 }
