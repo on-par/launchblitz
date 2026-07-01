@@ -14,7 +14,7 @@ const workflowSteps = [
   },
   {
     eyebrow: "Agents do the research",
-    title: "The platform runs the heavy early-stage business work in sequence.",
+    title: "LaunchBlitz structures the heavy early-stage business work into one guided sequence.",
     body: "You get Market Validation, Customer Avatar, Copy Deck, Landing Page Export, and a Launch Kit in one structured flow.",
   },
   {
@@ -60,7 +60,7 @@ const faqs = [
   {
     question: "What AI keys do I need?",
     answer:
-      "Bring your own provider keys. LaunchBlitz is built around OpenAI, Anthropic, and Perplexity so the session runs through accounts you already control.",
+      "Bring your own AI provider keys. The session runs entirely through accounts you already control.",
   },
   {
     question: "How long does a session take?",
@@ -198,8 +198,8 @@ export function MarketingLandingPage() {
             </h1>
             <p className="mt-7 max-w-2xl text-base leading-7 text-[#ECEFF1]/72 sm:text-lg">
               LaunchBlitz turns one raw concept into research, positioning, copy, and a
-              launch-ready handoff so founders can move from blank page to momentum with a
-              single guided workflow.
+              Lovable-ready launch packet so founders can move from blank page to momentum
+              with a single guided workflow.
             </p>
             <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center">
               <InlineWaitlist
@@ -226,10 +226,10 @@ export function MarketingLandingPage() {
                     <p className="text-xs uppercase tracking-[0.28em] text-[#CFD8DC]/46">
                       Session output
                     </p>
-                    <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em]">Build packet</h2>
+                    <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em]">Launch packet</h2>
                   </div>
                   <div className="rounded-full border border-[#FF4D00]/40 bg-[#FF4D00]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#ff9a71]">
-                    live
+                    preview
                   </div>
                 </div>
                 <div className="mt-4 space-y-3">
@@ -245,29 +245,16 @@ export function MarketingLandingPage() {
                         <span className="text-sm text-[#ECEFF1]/88">{item}</span>
                       </div>
                       <span className="text-xs uppercase tracking-[0.24em] text-[#CFD8DC]/40">
-                        ready
+                        included
                       </span>
                     </div>
                   ))}
                 </div>
                 <div className="mt-5 rounded-[1.2rem] border border-[#FF4D00]/15 bg-[#FF4D00]/8 px-4 py-3 text-sm text-[#ECEFF1]/82">
-                  Agent sequence assembled for research, copy, and launch outputs.
+                  Guided sequence for research, copy, and launch outputs.
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-b border-white/10 bg-[#f6f7f7] text-black">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-black/60">
-            Powered by OpenAI, Anthropic, Perplexity
-          </p>
-          <div className="flex flex-wrap gap-7 text-sm font-semibold text-black/72">
-            <span>OpenAI</span>
-            <span>Anthropic</span>
-            <span>Perplexity</span>
           </div>
         </div>
       </section>
