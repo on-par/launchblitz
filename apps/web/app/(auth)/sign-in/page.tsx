@@ -1,7 +1,17 @@
 import Link from "next/link";
 import { LaunchBlitzWordmark } from "../../../components/LaunchBlitzWordmark";
+import { sanitizeRedirect } from "../../../lib/session";
+import { AuthForm } from "../AuthForm";
 
-export default function SignInPage() {
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ redirect_url?: string }>;
+}) {
+  const { redirect_url } = await searchParams;
+  const redirectUrl = sanitizeRedirect(redirect_url);
+  const signUpHref = `/sign-up?redirect_url=${encodeURIComponent(redirectUrl)}`;
+
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black px-6 py-16 text-white">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,77,0,0.2),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent_32%)]" />
@@ -12,11 +22,15 @@ export default function SignInPage() {
         <p className="mt-8 text-sm uppercase tracking-[0.3em] text-[#CFD8DC]/45">Auth</p>
         <h1 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-white">Sign in</h1>
         <p className="mt-3 text-sm leading-7 text-[#CFD8DC]/66">
-          Clerk entrypoint placeholder for email and Google authentication.
+          Sign in to pick up your build where you left off.
         </p>
-        <button className="mt-8 rounded-full bg-[#FF4D00] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e94700]">
-          Continue
-        </button>
+        <AuthForm redirectUrl={redirectUrl} submitLabel="Sign in" />
+        <p className="mt-6 text-sm text-[#CFD8DC]/66">
+          New to LaunchBlitz?{" "}
+          <Link className="font-semibold text-[#FF4D00] hover:text-[#ff8a5c]" href={signUpHref}>
+            Create an account
+          </Link>
+        </p>
       </section>
     </main>
   );
