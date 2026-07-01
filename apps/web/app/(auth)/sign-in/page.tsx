@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { LaunchBlitzWordmark } from "../../../components/LaunchBlitzWordmark";
-import { sanitizeRedirect } from "../../../lib/session";
+import { authHref, resolveRedirect } from "../redirect";
 import { AuthForm } from "../AuthForm";
 
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ redirect_url?: string }>;
+  searchParams: Promise<{ redirect_url?: string | string[] }>;
 }) {
   const { redirect_url } = await searchParams;
-  const redirectUrl = sanitizeRedirect(redirect_url);
-  const signUpHref = `/sign-up?redirect_url=${encodeURIComponent(redirectUrl)}`;
+  const redirectUrl = resolveRedirect(redirect_url);
+  const signUpHref = authHref("/sign-up", redirectUrl);
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black px-6 py-16 text-white">

@@ -22,9 +22,19 @@ describe("sanitizeRedirect", () => {
       "http://evil.example/builds",
       "javascript:alert(1)",
       "mailto:founder@example.com",
+      // Control-character evasions: the URL parser strips these, folding the
+      // value back into a protocol-relative cross-origin URL.
+      "/\t/evil.example",
+      "/\n/evil.example",
+      "/\r/evil.example",
+      "/\t\\evil.example",
     ];
     for (const vector of vectors) {
       expect(sanitizeRedirect(vector)).toBe(START_BUILD_PATH);
     }
+  });
+
+  it("normalizes path traversal while staying same-origin", () => {
+    expect(sanitizeRedirect("/builds/../settings/keys")).toBe("/settings/keys");
   });
 });
