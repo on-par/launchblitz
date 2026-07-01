@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import {
+  DrizzleBuildsRepository,
   INITIAL_BUILD_STAGE,
   INITIAL_BUILD_STATUS,
   InMemoryBuildsRepository,
@@ -45,5 +47,18 @@ describe("InMemoryBuildsRepository", () => {
     const forA = await repo.listByUser("user-a");
     expect(forA).toHaveLength(2);
     expect(forA.every((build) => build.userId === "user-a")).toBe(true);
+  });
+});
+
+describe("DrizzleBuildsRepository", () => {
+  it("returns null for a non-uuid id without querying (avoids a Postgres uuid cast error)", async () => {
+    const throwingDb = {
+      select() {
+        throw new Error("should not query the database for a non-uuid id");
+      },
+    } as unknown as NodePgDatabase;
+    const repo = new DrizzleBuildsRepository(throwingDb);
+
+    await expect(repo.getByIdForUser("not-a-uuid", "user-a")).resolves.toBeNull();
   });
 });

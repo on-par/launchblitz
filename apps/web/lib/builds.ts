@@ -21,7 +21,17 @@ export function getBuildsRepository(): BuildsRepository {
   if (isDatabaseConfigured()) {
     return new DrizzleBuildsRepository(getDb());
   }
+  // Fail closed in production: an unset DATABASE_URL there is a misconfiguration,
+  // and silently using volatile in-memory storage would lose founders' builds.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "DATABASE_URL is required in production; refusing to fall back to the in-memory builds store.",
+    );
+  }
   if (!globalStore.__launchblitzBuildsRepo) {
+    console.warn(
+      "[builds] DATABASE_URL is not set — using an in-memory store. Builds will not persist across restarts.",
+    );
     globalStore.__launchblitzBuildsRepo = new InMemoryBuildsRepository();
   }
   return globalStore.__launchblitzBuildsRepo;

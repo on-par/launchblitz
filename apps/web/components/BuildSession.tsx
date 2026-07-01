@@ -6,6 +6,17 @@ import { Positioning } from "./stages/Positioning";
 
 const steps = ["Idea", "Market", "Avatar", "Positioning", "Copy", "Brand", "Export", "Launch"];
 
+const stageTitles = [
+  "Idea capture",
+  "Market validation",
+  "Customer avatar",
+  "Positioning",
+  "Copy deck",
+  "Brand inputs",
+  "Lovable export",
+  "Launch kit",
+];
+
 export interface BuildSummary {
   id: string;
   status: string;
@@ -16,13 +27,14 @@ export interface BuildSummary {
 export function BuildSession({ build }: { build?: BuildSummary }) {
   const currentStep = build?.currentStage ?? 0;
   const statusLabel = build ? formatStatus(build.status) : "Skeleton";
+  const heading = build ? (stageTitles[currentStep] ?? "Build session") : "Workflow skeleton";
 
   return (
     <section className="space-y-8">
       <header>
         <p className="text-sm uppercase tracking-[0.3em] text-[#CFD8DC]/45">Build session</p>
         <h1 className="mt-2 text-4xl font-semibold tracking-[-0.05em] text-white">
-          {build ? "Idea capture" : "Workflow skeleton"}
+          {heading}
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-[#CFD8DC]/66">
           Review each stage of the session as LaunchBlitz assembles the research, avatar,

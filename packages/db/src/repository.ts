@@ -7,6 +7,11 @@ import { builds } from "./schema";
 export const INITIAL_BUILD_STATUS = "active";
 export const INITIAL_BUILD_STAGE = 0;
 
+// Build ids are Postgres uuids; a non-uuid string makes the uuid column comparison
+// throw, so guard lookups and treat malformed ids as "not found".
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /** A persisted Build as returned to callers (all fields resolved, no nulls). */
 export interface BuildRecord {
   id: string;
@@ -67,6 +72,9 @@ export class DrizzleBuildsRepository implements BuildsRepository {
   }
 
   async getByIdForUser(id: string, userId: string): Promise<BuildRecord | null> {
+    if (!UUID_PATTERN.test(id)) {
+      return null;
+    }
     const [row] = await this.db
       .select()
       .from(builds)

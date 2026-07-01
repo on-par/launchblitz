@@ -16,8 +16,14 @@ function clerkConfigured(): boolean {
  */
 export async function getCurrentUserId(): Promise<string | null> {
   if (clerkConfigured()) {
-    const { userId } = await auth();
-    return userId ?? null;
+    try {
+      const { userId } = await auth();
+      return userId ?? null;
+    } catch {
+      // Clerk keys are present but clerkMiddleware isn't wired yet (issue #7 owns
+      // that). Treat as signed out rather than crashing the request with a 500.
+      return null;
+    }
   }
   return DEV_USER_ID;
 }
