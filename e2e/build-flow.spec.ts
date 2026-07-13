@@ -12,7 +12,7 @@ test("dashboard shell renders build sessions", async ({ page }) => {
   await expect(page.getByText("Build sessions")).toBeVisible();
 });
 
-test("build session renders the stage workflow", async ({ page }) => {
-  await page.goto("/dashboard/builds/demo");
-  await expect(page.getByText("Workflow skeleton")).toBeVisible();
+test("unknown build shows not found", async ({ page }) => {
+  const response = await page.goto("/dashboard/builds/demo");
+  expect(response?.status()).toBe(404);
 });

@@ -1,12 +1,38 @@
 import { ProgressStepper } from "@launchblitz/ui";
-import { AvatarBuilder } from "./stages/AvatarBuilder";
-import { IdeaCapture } from "./stages/IdeaCapture";
-import { MarketValidation } from "./stages/MarketValidation";
-import { Positioning } from "./stages/Positioning";
+import type { IdeaSummary } from "@launchblitz/workflow";
+import { StageOneRunner } from "./StageOneRunner";
+import type { StageOneResultProps } from "./StageOneResult";
 
 const steps = ["Idea", "Market", "Avatar", "Positioning", "Copy", "Brand", "Export", "Launch"];
 
-export function BuildSession() {
+export interface SavedStageOutput {
+  output: unknown;
+  provider: string | null;
+  model: string | null;
+  status: string;
+  error: string | null;
+}
+
+export interface BuildSessionProps {
+  build: { id: string; seedIdea: string | null; currentStage: number | null };
+  stageOutput: SavedStageOutput | null;
+}
+
+function toStageOneResult(stageOutput: SavedStageOutput | null): StageOneResultProps | null {
+  if (!stageOutput) return null;
+  if (stageOutput.status === "failed") {
+    return { status: "failed", error: stageOutput.error ?? "Stage failed." };
+  }
+  return {
+    status: "complete",
+    // rawOutput is jsonb; it was written by the schema-validated stage result.
+    output: stageOutput.output as IdeaSummary,
+    provider: stageOutput.provider ?? "anthropic",
+    model: stageOutput.model ?? "",
+  };
+}
+
+export function BuildSession({ build, stageOutput }: BuildSessionProps) {
   return (
     <section className="space-y-8">
       <header>
@@ -29,21 +55,14 @@ export function BuildSession() {
         </p>
       </div>
       <div className="rounded-[1.8rem] border border-white/10 bg-white/[0.03] p-5">
-        <ProgressStepper currentStep={2} steps={steps} />
+        <ProgressStepper currentStep={build.currentStage ?? 0} steps={steps} />
       </div>
-      <div className="grid gap-4 xl:grid-cols-2">
-        <div className="rounded-[1.6rem] border border-white/10 bg-white/[0.03] p-1">
-          <IdeaCapture />
-        </div>
-        <div className="rounded-[1.6rem] border border-white/10 bg-white/[0.03] p-1">
-          <MarketValidation />
-        </div>
-        <div className="rounded-[1.6rem] border border-white/10 bg-white/[0.03] p-1">
-          <AvatarBuilder />
-        </div>
-        <div className="rounded-[1.6rem] border border-white/10 bg-white/[0.03] p-1">
-          <Positioning />
-        </div>
+      <div className="rounded-[1.6rem] border border-white/10 bg-white/[0.03] p-1">
+        <StageOneRunner
+          buildId={build.id}
+          seedIdea={build.seedIdea}
+          saved={toStageOneResult(stageOutput)}
+        />
       </div>
     </section>
   );
