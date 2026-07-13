@@ -15,12 +15,14 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "drizzle-orm": "latest"
+    "drizzle-orm": "latest",
+    "pg": "latest"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "latest",
     "@types/node": "^24.0.0",
+    "@types/pg": "latest",
     "drizzle-kit": "latest",
-    "pg": "latest",
     "typescript": "^5.9.2",
     "vitest": "latest"
   }

@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1783951824668,
+      "tag": "0000_curvy_ser_duncan",
+      "breakpoints": true
+    }
+  ]
+}
