@@ -1,4 +1,4 @@
-import { stageOutputText } from "@launchblitz/db";
+import { toStageOutputView } from "@launchblitz/db";
 import { BuildSession, type StageOutputView } from "../../../../../components/BuildSession";
 import { getSession } from "../../../../../lib/auth";
 import { getStageOutputsRepository } from "../../../../../lib/stage-outputs";
@@ -14,14 +14,7 @@ export default async function BuildPage({ params }: BuildPageProps) {
   let stageOutputs: StageOutputView[] = [];
   if (session) {
     const records = await getStageOutputsRepository().listForUser(id, session.userId);
-    stageOutputs = records.map((record) => ({
-      id: record.id,
-      buildId: record.buildId,
-      stageIndex: record.stageIndex,
-      stageName: record.stageName,
-      rawText: stageOutputText(record.rawOutput),
-      editedText: record.editedOutput === null ? null : stageOutputText(record.editedOutput),
-    }));
+    stageOutputs = records.map(toStageOutputView);
   }
 
   return <BuildSession stageOutputs={stageOutputs} />;

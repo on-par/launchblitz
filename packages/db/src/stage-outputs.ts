@@ -49,6 +49,28 @@ export function stageOutputText(value: unknown): string {
   return JSON.stringify(value, null, 2);
 }
 
+/** Founder-facing view of a Stage output: raw/edited jsonb resolved to display text. */
+export interface StageOutputDisplay {
+  id: string;
+  buildId: string;
+  stageIndex: number;
+  stageName: string;
+  rawText: string;
+  editedText: string | null;
+}
+
+/** Shared by the API route response and the session page's server-side fetch. */
+export function toStageOutputView(record: StageOutputRecord): StageOutputDisplay {
+  return {
+    id: record.id,
+    buildId: record.buildId,
+    stageIndex: record.stageIndex,
+    stageName: record.stageName,
+    rawText: stageOutputText(record.rawOutput),
+    editedText: record.editedOutput === null ? null : stageOutputText(record.editedOutput),
+  };
+}
+
 /** A persisted Stage output as returned to callers. */
 export interface StageOutputRecord {
   id: string;

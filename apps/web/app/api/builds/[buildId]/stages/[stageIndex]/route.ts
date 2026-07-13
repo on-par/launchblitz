@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { stageOutputText, validateEditedContent, type StageOutputRecord } from "@launchblitz/db";
+import {
+  toStageOutputView,
+  validateEditedContent,
+  type StageOutputRecord,
+} from "@launchblitz/db";
 import { getSession } from "../../../../../../lib/auth";
 import { getStageOutputsRepository } from "../../../../../../lib/stage-outputs";
 
@@ -11,25 +15,22 @@ interface RouteParams {
 }
 
 function toResponsePayload(record: StageOutputRecord) {
-  return {
-    stageOutput: {
-      id: record.id,
-      buildId: record.buildId,
-      stageIndex: record.stageIndex,
-      stageName: record.stageName,
-      rawText: stageOutputText(record.rawOutput),
-      editedText:
-        record.editedOutput === null ? null : stageOutputText(record.editedOutput),
-    },
-  };
+  return { stageOutput: toStageOutputView(record) };
 }
+
+// Postgres int4 max — stageIndex is stored in an `integer` column, so anything
+// beyond this range would otherwise reach Drizzle and throw an unhandled
+// "integer out of range" error instead of a clean 404.
+const POSTGRES_INT4_MAX = 2_147_483_647;
 
 function parseStageIndex(raw: string): number | null {
   if (!/^\d+$/.test(raw)) {
     return null;
   }
   const value = Number.parseInt(raw, 10);
-  return Number.isInteger(value) && value >= 0 ? value : null;
+  return Number.isInteger(value) && value >= 0 && value <= POSTGRES_INT4_MAX
+    ? value
+    : null;
 }
 
 /**

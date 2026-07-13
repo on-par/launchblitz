@@ -21,6 +21,12 @@ export function getDb(): NodePgDatabase {
   }
   if (!db) {
     pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    // node-postgres emits 'error' on the pool for backend-reported errors on
+    // idle clients (e.g. a dropped connection); without a listener that event
+    // is unhandled and crashes the process.
+    pool.on("error", (error) => {
+      console.error("[db] Postgres pool error", error);
+    });
     db = drizzle(pool);
   }
   return db;

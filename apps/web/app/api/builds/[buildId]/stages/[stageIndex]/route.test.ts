@@ -114,4 +114,12 @@ describe("stage output route", () => {
     expect((await get(buildId, 0)).status).toBe(404);
     expect((await patch(buildId, 0, { editedContent: "x" })).status).toBe(404);
   });
+
+  it("returns 404 for a stageIndex beyond the Postgres int4 range instead of erroring", async () => {
+    mockedGetSession.mockResolvedValue({ userId: "user-a" });
+    const buildId = crypto.randomUUID();
+
+    expect((await get(buildId, "9999999999")).status).toBe(404);
+    expect((await patch(buildId, "9999999999", { editedContent: "x" })).status).toBe(404);
+  });
 });
