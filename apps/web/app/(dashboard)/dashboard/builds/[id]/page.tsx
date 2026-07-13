@@ -17,5 +17,7 @@ export default async function BuildPage({ params }: BuildPageProps) {
     stageOutputs = records.map(toStageOutputView);
   }
 
-  return <BuildSession stageOutputs={stageOutputs} />;
+  return (
+    <BuildSession packetHref={`/dashboard/builds/${id}/packet`} stageOutputs={stageOutputs} />
+  );
 }

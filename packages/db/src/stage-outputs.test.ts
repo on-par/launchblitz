@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import {
   DrizzleStageOutputsRepository,
   EDITED_CONTENT_MAX_LENGTH,
@@ -7,6 +6,7 @@ import {
   stageOutputText,
   validateEditedContent,
 } from "./stage-outputs";
+import type { Db } from "./provider-keys/repository";
 
 describe("InMemoryStageOutputsRepository", () => {
   it("creates a record tied to the build with the given stage fields and no edit", async () => {
@@ -96,7 +96,7 @@ describe("DrizzleStageOutputsRepository", () => {
       select() {
         throw new Error("should not query the database for a non-uuid id");
       },
-    } as unknown as NodePgDatabase;
+    } as unknown as Db;
     const repo = new DrizzleStageOutputsRepository(throwingDb);
 
     await expect(repo.getForUser("not-a-uuid", 0, "user-a")).resolves.toBeNull();

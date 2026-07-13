@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { builds, stageOutputs } from "./schema";
+import type { Db } from "./provider-keys/repository";
 
 // Stage outputs are Postgres uuids; a non-uuid string makes the uuid column
 // comparison throw, so guard lookups and treat malformed ids as "not found".
@@ -136,7 +136,7 @@ function toRecord(row: StageOutputRow): StageOutputRecord {
 
 /** Drizzle/Postgres-backed repository used at runtime when DATABASE_URL is set. */
 export class DrizzleStageOutputsRepository implements StageOutputsRepository {
-  constructor(private readonly db: NodePgDatabase) {}
+  constructor(private readonly db: Db) {}
 
   private async isOwnedByUser(buildId: string, userId: string): Promise<boolean> {
     if (!UUID_PATTERN.test(buildId)) {

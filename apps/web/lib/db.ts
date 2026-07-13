@@ -1,26 +1,23 @@
-import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
+import type { Db } from "@launchblitz/db";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
-let pool: Pool | undefined;
-let db: NodePgDatabase | undefined;
+export type { Db };
+
+let db: Db | undefined;
 
 export function isDatabaseConfigured(): boolean {
   return Boolean(process.env.DATABASE_URL);
 }
 
-/**
- * Lazily create and reuse a Drizzle client backed by a Postgres pool.
- * Throws when DATABASE_URL is unset — callers that need a graceful fallback
- * (e.g. local/e2e without a database) should branch on {@link isDatabaseConfigured}.
- */
-export function getDb(): NodePgDatabase {
-  if (!isDatabaseConfigured()) {
-    throw new Error(
-      "DATABASE_URL is not set. Configure Postgres to enable database-backed builds.",
-    );
-  }
+export function getDb(): Db {
   if (!db) {
-    pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error("DATABASE_URL is not set");
+    }
+
+    const pool = new Pool({ connectionString });
     // node-postgres emits 'error' on the pool for backend-reported errors on
     // idle clients (e.g. a dropped connection); without a listener that event
     // is unhandled and crashes the process.
@@ -29,5 +26,6 @@ export function getDb(): NodePgDatabase {
     });
     db = drizzle(pool);
   }
+
   return db;
 }

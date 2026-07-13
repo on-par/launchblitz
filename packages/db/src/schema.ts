@@ -1,4 +1,4 @@
-import { integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 export const builds = pgTable("builds", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -20,10 +20,16 @@ export const stageOutputs = pgTable("stage_outputs", {
   approvedAt: timestamp("approved_at"),
 });
 
-export const providerKeys = pgTable("provider_keys", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: text("user_id").notNull(),
-  provider: text("provider").notNull(),
-  encryptedKey: text("encrypted_key").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+export const providerKeys = pgTable(
+  "provider_keys",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id").notNull(),
+    provider: text("provider").notNull(),
+    encryptedKey: text("encrypted_key").notNull(),
+    keyHint: text("key_hint").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (t) => [uniqueIndex("provider_keys_user_id_provider_unique").on(t.userId, t.provider)],
+);

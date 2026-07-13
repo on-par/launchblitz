@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ProgressStepper } from "@launchblitz/ui";
 import { AvatarBuilder } from "./stages/AvatarBuilder";
 import { IdeaCapture } from "./stages/IdeaCapture";
@@ -17,21 +18,32 @@ export interface StageOutputView {
 }
 
 export interface BuildSessionProps {
+  packetHref?: string;
   stageOutputs?: StageOutputView[];
 }
 
-export function BuildSession({ stageOutputs = [] }: BuildSessionProps) {
+export function BuildSession({ packetHref, stageOutputs = [] }: BuildSessionProps) {
   return (
     <section className="space-y-8">
-      <header>
-        <p className="text-sm uppercase tracking-[0.3em] text-[#CFD8DC]/45">Build session</p>
-        <h1 className="mt-2 text-4xl font-semibold tracking-[-0.05em] text-white">
-          Workflow skeleton
-        </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-[#CFD8DC]/66">
-          Review each stage of the session as LaunchBlitz assembles the research, avatar,
-          positioning, and downstream launch assets.
-        </p>
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm uppercase tracking-[0.3em] text-[#CFD8DC]/45">Build session</p>
+          <h1 className="mt-2 text-4xl font-semibold tracking-[-0.05em] text-white">
+            Workflow skeleton
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#CFD8DC]/66">
+            Review each stage of the session as LaunchBlitz assembles the research, avatar,
+            positioning, and downstream launch assets.
+          </p>
+        </div>
+        {packetHref ? (
+          <Link
+            href={packetHref}
+            className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e94700]"
+          >
+            Preview launch packet
+          </Link>
+        ) : null}
       </header>
       <div className="rounded-[1.8rem] border border-[#FF4D00]/15 bg-[#FF4D00]/8 p-5">
         <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#ff9a71]">
