@@ -1,3 +1,27 @@
-export function getDb() {
-  throw new Error("Connect Drizzle and Supabase/Postgres in apps/web/lib/db.ts.");
+import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
+
+let pool: Pool | undefined;
+let db: NodePgDatabase | undefined;
+
+export function isDatabaseConfigured(): boolean {
+  return Boolean(process.env.DATABASE_URL);
+}
+
+/**
+ * Lazily create and reuse a Drizzle client backed by a Postgres pool.
+ * Throws when DATABASE_URL is unset — callers that need a graceful fallback
+ * (e.g. local/e2e without a database) should branch on {@link isDatabaseConfigured}.
+ */
+export function getDb(): NodePgDatabase {
+  if (!isDatabaseConfigured()) {
+    throw new Error(
+      "DATABASE_URL is not set. Configure Postgres to enable database-backed builds.",
+    );
+  }
+  if (!db) {
+    pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    db = drizzle(pool);
+  }
+  return db;
 }
