@@ -5,6 +5,7 @@ dist
 coverage
 playwright-report
 test-results
+.playwright-mcp
 .env.local
 .env
 .vercel
@@ -12,3 +13,6 @@ test-results
 .secrets
 
 supabase/.temp
+
+# Personal Claude Code settings (the shared .claude/settings.json IS committed)
+.claude/settings.local.json
