@@ -4,10 +4,25 @@ import { AvatarBuilder } from "./stages/AvatarBuilder";
 import { IdeaCapture } from "./stages/IdeaCapture";
 import { MarketValidation } from "./stages/MarketValidation";
 import { Positioning } from "./stages/Positioning";
+import { StageOutputEditor } from "./stages/StageOutputEditor";
 
 const steps = ["Idea", "Market", "Avatar", "Positioning", "Copy", "Brand", "Export", "Launch"];
 
-export function BuildSession({ packetHref }: { packetHref?: string }) {
+export interface StageOutputView {
+  id: string;
+  buildId: string;
+  stageIndex: number;
+  stageName: string;
+  rawText: string;
+  editedText: string | null;
+}
+
+export interface BuildSessionProps {
+  packetHref?: string;
+  stageOutputs?: StageOutputView[];
+}
+
+export function BuildSession({ packetHref, stageOutputs = [] }: BuildSessionProps) {
   return (
     <section className="space-y-8">
       <header className="flex items-start justify-between gap-4">
@@ -42,6 +57,20 @@ export function BuildSession({ packetHref }: { packetHref?: string }) {
       <div className="rounded-[1.8rem] border border-white/10 bg-white/[0.03] p-5">
         <ProgressStepper currentStep={2} steps={steps} />
       </div>
+      {stageOutputs.length > 0 && (
+        <div className="space-y-4">
+          <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#CFD8DC]/46">
+            Generated outputs
+          </p>
+          <div className="space-y-4">
+            {[...stageOutputs]
+              .sort((a, b) => a.stageIndex - b.stageIndex)
+              .map((stageOutput) => (
+                <StageOutputEditor key={stageOutput.id} {...stageOutput} />
+              ))}
+          </div>
+        </div>
+      )}
       <div className="grid gap-4 xl:grid-cols-2">
         <div className="rounded-[1.6rem] border border-white/10 bg-white/[0.03] p-1">
           <IdeaCapture />
