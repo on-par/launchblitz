@@ -132,6 +132,40 @@ describe("runFirstStage", () => {
     expect(updateCalls).toHaveLength(0);
   });
 
+  it("propagates a persistence error on the success path instead of masking it as stage_failed", async () => {
+    const { store } = makeStore({
+      "build-1": { id: "build-1", seedIdea: null, currentStage: 0 },
+    });
+    store.upsertStageOutput = async () => {
+      throw new Error("connection reset");
+    };
+
+    await expect(
+      runFirstStage(
+        store,
+        { buildId: "build-1", userId: "user-1", idea: "a laundry app", keys: { anthropic: "key" } },
+        successStage(),
+      ),
+    ).rejects.toThrow("connection reset");
+  });
+
+  it("still reports stage_failed even if persisting the failure itself throws", async () => {
+    const { store } = makeStore({
+      "build-1": { id: "build-1", seedIdea: null, currentStage: 0 },
+    });
+    store.upsertStageOutput = async () => {
+      throw new Error("connection reset");
+    };
+
+    const result = await runFirstStage(
+      store,
+      { buildId: "build-1", userId: "user-1", idea: "a laundry app", keys: { anthropic: "key" } },
+      failingStage(),
+    );
+
+    expect(result).toEqual({ ok: false, code: "stage_failed", message: "Anthropic request failed" });
+  });
+
   it("retries after a failure by upserting with the same buildId/stageIndex key", async () => {
     const { store, upsertCalls } = makeStore({
       "build-1": { id: "build-1", seedIdea: null, currentStage: 0 },

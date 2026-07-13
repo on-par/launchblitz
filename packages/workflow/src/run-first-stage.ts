@@ -43,23 +43,9 @@ export async function runFirstStage(
     return { ok: false, code: "missing_idea", message: "No idea text to capture." };
   }
 
+  let result;
   try {
-    const result = await runToCompletion(stage, { buildId: input.buildId, keys: input.keys, idea });
-    await store.upsertStageOutput({
-      buildId: input.buildId,
-      stageIndex: IDEA_STAGE_INDEX,
-      stageName: IDEA_STAGE_NAME,
-      rawOutput: result.output,
-      provider: result.provider,
-      model: result.model,
-      status: "complete",
-    });
-    await store.updateBuild(input.buildId, {
-      status: "in_progress",
-      currentStage: IDEA_STAGE_INDEX,
-      seedIdea: idea,
-    });
-    return { ok: true, output: result.output, provider: result.provider, model: result.model };
+    result = await runToCompletion(stage, { buildId: input.buildId, keys: input.keys, idea });
   } catch (err) {
     const message =
       err instanceof WorkflowStageError
@@ -67,17 +53,48 @@ export async function runFirstStage(
         : err instanceof Error
           ? err.message
           : "Stage failed.";
-    await store.upsertStageOutput({
+    // Best-effort: if persisting the failure itself fails (e.g. the DB is the
+    // reason the stage failed), still report stage_failed to the caller rather
+    // than throwing an unhandled rejection from the error path.
+    try {
+      await Promise.all([
+        store.upsertStageOutput({
+          buildId: input.buildId,
+          stageIndex: IDEA_STAGE_INDEX,
+          stageName: IDEA_STAGE_NAME,
+          rawOutput: null,
+          provider: "anthropic",
+          model: IDEA_MODEL,
+          status: "failed",
+          error: message,
+        }),
+        store.updateBuild(input.buildId, { status: "stage_failed", seedIdea: idea }),
+      ]);
+    } catch {
+      // swallow: the stage_failed result below is still the accurate report to the caller
+    }
+    return { ok: false, code: "stage_failed", message };
+  }
+
+  // A successful stage result is only "lost" if these writes themselves fail —
+  // that's a genuine infra error, not a stage failure, so it propagates rather
+  // than being persisted as a misleading "failed" row that overwrites the
+  // real output.
+  await Promise.all([
+    store.upsertStageOutput({
       buildId: input.buildId,
       stageIndex: IDEA_STAGE_INDEX,
       stageName: IDEA_STAGE_NAME,
-      rawOutput: null,
-      provider: "anthropic",
-      model: IDEA_MODEL,
-      status: "failed",
-      error: message,
-    });
-    await store.updateBuild(input.buildId, { status: "stage_failed", seedIdea: idea });
-    return { ok: false, code: "stage_failed", message };
-  }
+      rawOutput: result.output,
+      provider: result.provider,
+      model: result.model,
+      status: "complete",
+    }),
+    store.updateBuild(input.buildId, {
+      status: "in_progress",
+      currentStage: IDEA_STAGE_INDEX,
+      seedIdea: idea,
+    }),
+  ]);
+  return { ok: true, output: result.output, provider: result.provider, model: result.model };
 }

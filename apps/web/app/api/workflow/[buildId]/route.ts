@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import { getBuildForUser, updateBuild, upsertStageOutput } from "@launchblitz/db";
 import { parseRunStageBody, runFirstStage, type StageOneStore } from "@launchblitz/workflow";
 import { getSession } from "../../../../lib/auth";
+import { isValidBuildId } from "../../../../lib/build-id";
 import { getDb } from "../../../../lib/db";
-
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function createStore(): StageOneStore {
   const db = getDb();
@@ -28,7 +27,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ bui
   }
 
   const { buildId } = await params;
-  if (!UUID_PATTERN.test(buildId)) {
+  if (!isValidBuildId(buildId)) {
     return NextResponse.json({ error: "Build not found." }, { status: 404 });
   }
 
