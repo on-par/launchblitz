@@ -6,5 +6,10 @@ export default async function PacketPage({ params }: { params: Promise<{ id: str
   const { id } = await params;
   const records = await getStageOutputRecords(id);
   const packet = assembleLaunchPacket(records);
-  return <LaunchPacketPreview packet={packet} />;
+  return (
+    <LaunchPacketPreview
+      packet={packet}
+      lovableHandoffHref={`/dashboard/builds/${id}/packet/lovable`}
+    />
+  );
 }
