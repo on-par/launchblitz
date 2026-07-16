@@ -10,6 +10,11 @@ export default async function PacketPage({ params }: { params: Promise<{ id: str
     <LaunchPacketPreview
       packet={packet}
       lovableHandoffHref={`/dashboard/builds/${id}/packet/lovable`}
+      exportHrefs={{
+        markdown: `/api/builds/${id}/packet/export?format=markdown`,
+        json: `/api/builds/${id}/packet/export?format=json`,
+        launchKit: `/api/builds/${id}/launch-kit/export`,
+      }}
     />
   );
 }

@@ -10,7 +10,7 @@ export type LovableHandoff = {
   isComplete: boolean; // mirrors packet.isComplete
 };
 
-function renderContentBlocks(content: Record<string, unknown> | null): string[] {
+export function renderContentBlocks(content: Record<string, unknown> | null): string[] {
   if (content === null) {
     return ["_No content captured for this section._"];
   }
