@@ -1,14 +1,12 @@
 import {
   encryptProviderKey,
-  listProviderKeyMeta,
   maskProviderKey,
   MVP_PROVIDERS,
   parseSaveProviderKeyInput,
-  upsertProviderKey,
 } from "@launchblitz/db";
 import { NextResponse } from "next/server";
 import { getSession } from "../../../lib/auth";
-import { getDb } from "../../../lib/db";
+import { getProviderKeysRepository } from "../../../lib/provider-keys";
 
 export async function GET() {
   const session = await getSession();
@@ -16,7 +14,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rows = await listProviderKeyMeta(getDb(), session.userId);
+  const rows = await getProviderKeysRepository().list(session.userId);
 
   return NextResponse.json({
     providers: MVP_PROVIDERS.map((provider) => {
@@ -58,7 +56,7 @@ export async function PUT(request: Request) {
   const encryptedKey = encryptProviderKey(key, secret);
   const keyHint = maskProviderKey(key);
 
-  const row = await upsertProviderKey(getDb(), {
+  const row = await getProviderKeysRepository().upsert({
     userId: session.userId,
     provider,
     encryptedKey,

@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { providerKeys } from "../schema";
 import type { Db } from "./repository";
-import { listProviderKeyMeta, upsertProviderKey } from "./repository";
+import { InMemoryProviderKeysRepository, listProviderKeyMeta, upsertProviderKey } from "./repository";
 
 const DRIZZLE_DIR = join(__dirname, "..", "..", "drizzle");
 
@@ -97,5 +97,71 @@ describe("provider key repository", () => {
 
     const allRows = await db.select().from(providerKeys);
     expect(allRows).toHaveLength(2);
+  });
+});
+
+describe("InMemoryProviderKeysRepository", () => {
+  it("upsert inserts and returns metadata without encryptedKey", async () => {
+    const repo = new InMemoryProviderKeysRepository();
+
+    const row = await repo.upsert({
+      userId: "user-a",
+      provider: "anthropic",
+      encryptedKey: "v1.iv.tag.first",
+      keyHint: "…aaaa",
+    });
+
+    expect(row.keyHint).toBe("…aaaa");
+    expect(row).not.toHaveProperty("encryptedKey");
+  });
+
+  it("upserting the same user+provider updates keyHint and bumps updatedAt instead of adding a row", async () => {
+    const repo = new InMemoryProviderKeysRepository();
+
+    const first = await repo.upsert({
+      userId: "user-a",
+      provider: "anthropic",
+      encryptedKey: "v1.iv.tag.first",
+      keyHint: "…aaaa",
+    });
+
+    const updated = await repo.upsert({
+      userId: "user-a",
+      provider: "anthropic",
+      encryptedKey: "v1.iv.tag.second",
+      keyHint: "…bbbb",
+    });
+
+    expect(updated.id).toBe(first.id);
+    expect(updated.keyHint).toBe("…bbbb");
+    expect(updated.updatedAt?.getTime()).toBeGreaterThanOrEqual(first.updatedAt?.getTime() ?? 0);
+
+    const rows = await repo.list("user-a");
+    expect(rows).toHaveLength(1);
+    expect(rows[0].keyHint).toBe("…bbbb");
+  });
+
+  it("scopes list to the requesting user", async () => {
+    const repo = new InMemoryProviderKeysRepository();
+
+    await repo.upsert({
+      userId: "user-a",
+      provider: "anthropic",
+      encryptedKey: "v1.iv.tag.user-a",
+      keyHint: "…aaaa",
+    });
+    await repo.upsert({
+      userId: "user-b",
+      provider: "anthropic",
+      encryptedKey: "v1.iv.tag.user-b",
+      keyHint: "…bbbb",
+    });
+
+    const userARows = await repo.list("user-a");
+    expect(userARows).toHaveLength(1);
+    expect(userARows[0].keyHint).toBe("…aaaa");
+    for (const row of userARows) {
+      expect(row).not.toHaveProperty("encryptedKey");
+    }
   });
 });

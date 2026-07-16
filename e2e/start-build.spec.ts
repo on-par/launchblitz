@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test";
+import { saveAnthropicKey } from "./support/keys";
 import { signIn } from "./support/session";
 
-test.beforeEach(async ({ context }) => {
+test.beforeEach(async ({ context, page }) => {
   await signIn(context);
+  await saveAnthropicKey(page);
 });
 
 test("starting a build persists it and lands on the session page", async ({ page }) => {

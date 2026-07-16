@@ -1,13 +1,21 @@
 import Link from "next/link";
+import { ProviderReadinessPanel } from "../../../components/ProviderReadinessPanel";
 import { StartBuildForm } from "../../../components/StartBuildForm";
 import { getSession } from "../../../lib/auth";
 import { getBuildsRepository } from "../../../lib/builds";
 import { toBuildListItem } from "../../../lib/build-list";
+import { getProviderKeysRepository } from "../../../lib/provider-keys";
+import { toProviderReadiness } from "../../../lib/provider-readiness";
+
+const KEY_VAULT_HREF = "/settings/keys?returnTo=/builds";
 
 export default async function BuildsPage() {
   const session = await getSession();
   const records = session ? await getBuildsRepository().listForUser(session.userId) : [];
   const items = records.map(toBuildListItem);
+
+  const keyRows = session ? await getProviderKeysRepository().list(session.userId) : [];
+  const readiness = toProviderReadiness(keyRows);
 
   return (
     <section className="space-y-8">
@@ -22,13 +30,17 @@ export default async function BuildsPage() {
         </p>
       </header>
 
+      {session ? (
+        <ProviderReadinessPanel readiness={readiness} keyVaultHref={KEY_VAULT_HREF} />
+      ) : null}
+
       <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-5">
         <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#CFD8DC]/46">
           New build
         </p>
         <h2 className="mt-2 text-xl font-semibold text-white">What are you launching?</h2>
         <div className="mt-4">
-          <StartBuildForm />
+          <StartBuildForm missingProviders={readiness.missingLabels} keyVaultHref={KEY_VAULT_HREF} />
         </div>
       </div>
 

@@ -1,14 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SEED_IDEA_MAX_LENGTH } from "@launchblitz/db";
 
-export function StartBuildForm() {
+export interface StartBuildFormProps {
+  missingProviders?: string[];
+  keyVaultHref?: string;
+}
+
+export function StartBuildForm({
+  missingProviders = [],
+  keyVaultHref = "/settings/keys",
+}: StartBuildFormProps) {
   const router = useRouter();
   const [idea, setIdea] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const locked = missingProviders.length > 0;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -54,7 +64,7 @@ export function StartBuildForm() {
       <div className="flex items-center justify-between gap-4">
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || locked}
           className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e94700] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? "Starting…" : "Start new build"}
@@ -65,6 +75,15 @@ export function StartBuildForm() {
           </p>
         )}
       </div>
+      {locked && (
+        <p className="text-sm text-amber-200">
+          Start is locked — add your {missingProviders.join(", ")} key first. Stages can&apos;t
+          generate outputs without it.{" "}
+          <Link href={keyVaultHref} className="underline">
+            Open the key vault
+          </Link>
+        </p>
+      )}
     </form>
   );
 }

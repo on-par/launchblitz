@@ -48,3 +48,88 @@ export async function listProviderKeyMeta(db: Db, userId: string) {
     .from(providerKeys)
     .where(eq(providerKeys.userId, userId));
 }
+
+/** Metadata only — never returns encryptedKey. */
+export interface ProviderKeyMetaRecord {
+  id: string;
+  provider: string;
+  keyHint: string;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+/**
+ * Persistence boundary for provider keys. Implemented by
+ * {@link DrizzleProviderKeysRepository} for real Postgres and
+ * {@link InMemoryProviderKeysRepository} for tests and local runs without a
+ * database configured.
+ */
+export interface ProviderKeysRepository {
+  /** Metadata only — never returns encryptedKey. */
+  list(userId: string): Promise<ProviderKeyMetaRecord[]>;
+  upsert(input: UpsertProviderKeyInput): Promise<ProviderKeyMetaRecord>;
+}
+
+/** Drizzle/Postgres-backed repository used at runtime when DATABASE_URL is set. */
+export class DrizzleProviderKeysRepository implements ProviderKeysRepository {
+  constructor(private readonly db: Db) {}
+
+  async list(userId: string): Promise<ProviderKeyMetaRecord[]> {
+    return listProviderKeyMeta(this.db, userId);
+  }
+
+  async upsert(input: UpsertProviderKeyInput): Promise<ProviderKeyMetaRecord> {
+    return upsertProviderKey(this.db, input);
+  }
+}
+
+type ProviderKeyRow = UpsertProviderKeyInput & {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+/**
+ * In-memory repository. Backs tests and local/e2e runs without a database.
+ */
+export class InMemoryProviderKeysRepository implements ProviderKeysRepository {
+  private readonly rows = new Map<string, ProviderKeyRow>();
+
+  private toMeta(row: ProviderKeyRow): ProviderKeyMetaRecord {
+    return {
+      id: row.id,
+      provider: row.provider,
+      keyHint: row.keyHint,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  }
+
+  async list(userId: string): Promise<ProviderKeyMetaRecord[]> {
+    return [...this.rows.values()]
+      .filter((row) => row.userId === userId)
+      .map((row) => this.toMeta(row));
+  }
+
+  async upsert(input: UpsertProviderKeyInput): Promise<ProviderKeyMetaRecord> {
+    const key = `${input.userId}:${input.provider}`;
+    const existing = this.rows.get(key);
+
+    const row: ProviderKeyRow = existing
+      ? {
+          ...existing,
+          encryptedKey: input.encryptedKey,
+          keyHint: input.keyHint,
+          updatedAt: new Date(),
+        }
+      : {
+          ...input,
+          id: crypto.randomUUID(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+    this.rows.set(key, row);
+    return this.toMeta(row);
+  }
+}
