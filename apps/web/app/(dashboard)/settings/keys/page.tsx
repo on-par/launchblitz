@@ -1,5 +1,11 @@
 import { KeyVault } from "../../../../components/KeyVault";
+import { sanitizeRedirect } from "../../../../lib/auth";
 
-export default function KeysPage() {
-  return <KeyVault />;
+interface KeysPageProps {
+  searchParams: Promise<{ returnTo?: string }>;
+}
+
+export default async function KeysPage({ searchParams }: KeysPageProps) {
+  const { returnTo } = await searchParams;
+  return <KeyVault returnHref={returnTo ? sanitizeRedirect(returnTo) : null} />;
 }

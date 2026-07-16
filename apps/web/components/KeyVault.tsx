@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 const COMING_SOON_PROVIDERS = ["OpenAI", "Perplexity", "Exploding Topics", "Jasper", "Lovable", "Tidio"];
 
@@ -10,7 +11,11 @@ type AnthropicKeyState = {
   updatedAt: string | null;
 };
 
-export function KeyVault() {
+export interface KeyVaultProps {
+  returnHref?: string | null;
+}
+
+export function KeyVault({ returnHref }: KeyVaultProps = {}) {
   const [loading, setLoading] = useState(true);
   const [state, setState] = useState<AnthropicKeyState>({ saved: false, keyHint: null, updatedAt: null });
   const [key, setKey] = useState("");
@@ -75,6 +80,11 @@ export function KeyVault() {
 
   return (
     <section className="space-y-8">
+      {returnHref ? (
+        <Link href={returnHref} className="text-sm text-[#ff9a71] hover:underline">
+          ← Back to your build
+        </Link>
+      ) : null}
       <div>
         <p className="text-sm uppercase tracking-[0.3em] text-[#CFD8DC]/45">Settings</p>
         <h1 className="mt-2 text-4xl font-semibold tracking-[-0.05em] text-white">Key vault</h1>

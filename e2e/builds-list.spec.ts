@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { saveAnthropicKey } from "./support/keys";
 import { signIn } from "./support/session";
 
 test("empty state points a first-time founder at the start-build form", async ({
@@ -21,6 +22,7 @@ test("populated list shows build details and resume lands on the live session", 
   context,
 }) => {
   await signIn(context, `builds-list-populated-${Date.now()}`);
+  await saveAnthropicKey(page);
 
   await page.request.post("/api/builds", {
     data: { idea: "A launch checklist for florists" },
@@ -43,6 +45,7 @@ test("a founder never sees another founder's builds", async ({ page, context }) 
   const userB = `builds-list-scope-b-${Date.now()}`;
 
   await signIn(context, userA);
+  await saveAnthropicKey(page);
   await page.request.post("/api/builds", {
     data: { idea: "User A's secret idea" },
   });

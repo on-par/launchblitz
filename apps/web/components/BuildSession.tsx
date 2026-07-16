@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ProgressStepper } from "@launchblitz/ui";
+import type { ProviderReadiness } from "../lib/provider-readiness";
 import { STAGE_NAMES, stageLabel } from "../lib/stages";
+import { ProviderReadinessPanel } from "./ProviderReadinessPanel";
 import { AvatarBuilder } from "./stages/AvatarBuilder";
 import { IdeaCapture } from "./stages/IdeaCapture";
 import { MarketValidation } from "./stages/MarketValidation";
@@ -20,9 +22,17 @@ export interface BuildSessionProps {
   packetHref?: string;
   stageOutputs?: StageOutputView[];
   build?: { status: string; currentStage: number; seedIdea: string | null };
+  providerReadiness?: ProviderReadiness;
+  keyVaultHref?: string;
 }
 
-export function BuildSession({ packetHref, stageOutputs = [], build }: BuildSessionProps) {
+export function BuildSession({
+  packetHref,
+  stageOutputs = [],
+  build,
+  providerReadiness,
+  keyVaultHref,
+}: BuildSessionProps) {
   return (
     <section className="space-y-8">
       <header className="flex items-start justify-between gap-4">
@@ -62,6 +72,12 @@ export function BuildSession({ packetHref, stageOutputs = [], build }: BuildSess
           </p>
         )}
       </div>
+      {providerReadiness ? (
+        <ProviderReadinessPanel
+          readiness={providerReadiness}
+          keyVaultHref={keyVaultHref ?? "/settings/keys"}
+        />
+      ) : null}
       <div className="rounded-[1.8rem] border border-white/10 bg-white/[0.03] p-5">
         <ProgressStepper currentStep={build ? build.currentStage : 2} steps={[...STAGE_NAMES]} />
       </div>

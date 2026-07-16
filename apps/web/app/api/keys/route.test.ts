@@ -1,29 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getSession } from "../../../lib/auth";
+import { getProviderKeysRepository } from "../../../lib/provider-keys";
 
 vi.mock("../../../lib/auth", () => ({
   getSession: vi.fn(),
 }));
 
-vi.mock("../../../lib/db", () => ({
-  getDb: vi.fn(() => ({})),
+vi.mock("../../../lib/provider-keys", () => ({
+  getProviderKeysRepository: vi.fn(),
 }));
 
-vi.mock("@launchblitz/db", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@launchblitz/db")>();
-  return {
-    ...actual,
-    upsertProviderKey: vi.fn(),
-    listProviderKeyMeta: vi.fn(),
-  };
-});
-
-const { upsertProviderKey, listProviderKeyMeta } = await import("@launchblitz/db");
 const { GET, PUT } = await import("./route");
 
 const mockedGetSession = vi.mocked(getSession);
-const mockedUpsert = vi.mocked(upsertProviderKey);
-const mockedList = vi.mocked(listProviderKeyMeta);
+const mockedGetProviderKeysRepository = vi.mocked(getProviderKeysRepository);
+const mockedUpsert = vi.fn();
+const mockedList = vi.fn();
 
 function putRequest(body: unknown) {
   return new Request("http://localhost/api/keys", {
@@ -36,9 +28,11 @@ describe("/api/keys", () => {
   beforeEach(() => {
     process.env.PROVIDER_KEY_ENCRYPTION_KEY = "test-secret";
     mockedGetSession.mockReset();
+    mockedGetProviderKeysRepository.mockReset();
     mockedUpsert.mockReset();
     mockedList.mockReset();
     mockedList.mockResolvedValue([]);
+    mockedGetProviderKeysRepository.mockReturnValue({ list: mockedList, upsert: mockedUpsert });
   });
 
   afterEach(() => {
@@ -104,7 +98,7 @@ describe("/api/keys", () => {
 
       expect(res.status).toBe(200);
       expect(mockedUpsert).toHaveBeenCalledTimes(1);
-      const call = mockedUpsert.mock.calls[0][1];
+      const call = mockedUpsert.mock.calls[0][0];
       expect(call.userId).toBe("user-1");
       expect(call.encryptedKey).not.toBe(plaintext);
       expect(call.encryptedKey).not.toContain(plaintext);

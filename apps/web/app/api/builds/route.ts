@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { validateSeedIdea } from "@launchblitz/db";
 import { getSession } from "../../../lib/auth";
 import { getBuildsRepository } from "../../../lib/builds";
+import { getProviderKeysRepository } from "../../../lib/provider-keys";
+import { toProviderReadiness } from "../../../lib/provider-readiness";
 
 // Database-backed builds run on the Node.js runtime (pg driver).
 export const runtime = "nodejs";
@@ -10,6 +12,7 @@ export const runtime = "nodejs";
  * Create a new Build seeded with the founder's raw idea.
  * - 401 when there is no authenticated founder.
  * - 400 with founder-facing guidance when the idea is empty or invalid.
+ * - 409 when a required provider key isn't saved in the key vault yet.
  * - 201 with the created build otherwise. `userId` comes from the session
  *   only — never from the request body.
  */
@@ -31,6 +34,17 @@ export async function POST(request: Request) {
   const validation = validateSeedIdea(idea);
   if (!validation.ok) {
     return NextResponse.json({ error: validation.error }, { status: 400 });
+  }
+
+  const keyRows = await getProviderKeysRepository().list(session.userId);
+  if (!toProviderReadiness(keyRows).ready) {
+    return NextResponse.json(
+      {
+        error:
+          "Add your Anthropic key in the key vault before starting a build — stages can't generate outputs without it.",
+      },
+      { status: 409 },
+    );
   }
 
   const build = await getBuildsRepository().create({
