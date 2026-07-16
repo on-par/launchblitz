@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { LaunchPacket, PacketSection } from "@launchblitz/workflow";
 
 function SectionCard({ section }: { section: PacketSection }) {
@@ -27,17 +28,33 @@ function SectionCard({ section }: { section: PacketSection }) {
   );
 }
 
-export function LaunchPacketPreview({ packet }: { packet: LaunchPacket }) {
+export function LaunchPacketPreview({
+  packet,
+  lovableHandoffHref,
+}: {
+  packet: LaunchPacket;
+  lovableHandoffHref?: string;
+}) {
   return (
     <section className="space-y-8">
-      <header>
-        <p className="text-sm uppercase tracking-[0.3em] text-[#CFD8DC]/45">Launch packet</p>
-        <h1 className="mt-2 text-4xl font-semibold tracking-[-0.05em] text-white">
-          Launch packet preview
-        </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-[#CFD8DC]/66">
-          Only founder-approved outputs are compiled into the launch packet below.
-        </p>
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm uppercase tracking-[0.3em] text-[#CFD8DC]/45">Launch packet</p>
+          <h1 className="mt-2 text-4xl font-semibold tracking-[-0.05em] text-white">
+            Launch packet preview
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#CFD8DC]/66">
+            Only founder-approved outputs are compiled into the launch packet below.
+          </p>
+        </div>
+        {lovableHandoffHref ? (
+          <Link
+            href={lovableHandoffHref}
+            className="rounded-full border border-[#FF4D00]/30 bg-[#FF4D00]/10 px-4 py-2 text-sm font-semibold text-[#ff9a71] transition hover:bg-[#FF4D00]/20"
+          >
+            Generate Lovable handoff
+          </Link>
+        ) : null}
       </header>
 
       {!packet.isComplete ? (
