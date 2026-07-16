@@ -1,33 +1,32 @@
-import type { StageOutputRecord } from "@launchblitz/workflow";
+import type { StageOutputRecord as DbStageOutputRecord } from "@launchblitz/db";
+import type { StageOutputRecord as PacketStageOutputRecord } from "@launchblitz/workflow";
+import type { StageOutputsRepository } from "@launchblitz/db";
+import { getStageOutputsRepository } from "./stage-outputs";
 
-// Seam for the launch packet preview page. This is where the Drizzle query
-// over `stage_outputs` (via getDb() in apps/web/lib/db.ts) attaches once #16
-// and #18 land; until then it returns deterministic demo records so the
-// assembler and preview page can be exercised end-to-end.
-export async function getStageOutputRecords(buildId: string): Promise<StageOutputRecord[]> {
-  void buildId;
+/** Map a persisted stage_outputs row to the packet assembler's input shape. */
+export function toPacketRecord(record: DbStageOutputRecord): PacketStageOutputRecord {
+  return {
+    stageIndex: record.stageIndex,
+    stageName: record.stageName,
+    rawOutput: record.rawOutput,
+    editedOutput: record.editedOutput,
+    approvedAt: record.approvedAt,
+  };
+}
 
-  return [
-    {
-      stageIndex: 1,
-      stageName: "market-validation",
-      rawOutput: { summary: "Raw market scan" },
-      editedOutput: { summary: "Creator-economy tax tooling is underserved" },
-      approvedAt: new Date("2026-07-10T10:00:00Z"),
-    },
-    {
-      stageIndex: 2,
-      stageName: "customer-avatar",
-      rawOutput: { persona: "Solo creator earning $60k+" },
-      editedOutput: null,
-      approvedAt: new Date("2026-07-10T10:05:00Z"),
-    },
-    {
-      stageIndex: 4,
-      stageName: "copy-deck",
-      rawOutput: { headline: "Draft headline pending review" },
-      editedOutput: null,
-      approvedAt: null,
-    },
-  ];
+/**
+ * Ownership-gated read for the launch packet preview. Signed-out (null
+ * userId) or not-owned builds yield [], which the assembler renders as
+ * every required section missing.
+ */
+export async function getStageOutputRecords(
+  buildId: string,
+  userId: string | null,
+  repository: StageOutputsRepository = getStageOutputsRepository(),
+): Promise<PacketStageOutputRecord[]> {
+  if (!userId) {
+    return [];
+  }
+  const records = await repository.listForUser(buildId, userId);
+  return records.map(toPacketRecord);
 }

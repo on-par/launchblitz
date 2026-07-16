@@ -153,6 +153,21 @@ describe("assembleLaunchPacket", () => {
     expect(packet.sections.every((s) => s.stageName !== "idea-capture")).toBe(true);
   });
 
+  it("accepts a plain string editedOutput (a founder's edit) as section content", () => {
+    const packet = assembleLaunchPacket([
+      record({
+        stageName: "copy-deck",
+        rawOutput: { headline: "Draft headline pending review" },
+        editedOutput: "Founder-edited copy",
+        approvedAt: new Date("2026-07-10T10:00:00Z"),
+      }),
+    ]);
+
+    const section = packet.sections.find((s) => s.key === "copy-deck");
+    expect(section?.status).toBe("approved");
+    expect(section?.content).toBe("Founder-edited copy");
+  });
+
   it("normalizes both Date and ISO-string approvedAt inputs to an ISO string", () => {
     const packet = assembleLaunchPacket([
       record({

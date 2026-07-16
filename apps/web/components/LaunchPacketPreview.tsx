@@ -1,3 +1,4 @@
+import { stageOutputText } from "@launchblitz/db";
 import type { LaunchPacket, PacketSection } from "@launchblitz/workflow";
 
 function SectionCard({ section }: { section: PacketSection }) {
@@ -11,7 +12,7 @@ function SectionCard({ section }: { section: PacketSection }) {
           </span>
         </div>
         <pre className="mt-4 whitespace-pre-wrap text-sm text-[#ECEFF1]/76">
-          {JSON.stringify(section.content, null, 2)}
+          {stageOutputText(section.content)}
         </pre>
       </div>
     );

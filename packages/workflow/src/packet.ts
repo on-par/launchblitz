@@ -1,8 +1,8 @@
 export type StageOutputRecord = {
   stageIndex: number;
   stageName: string;
-  rawOutput: Record<string, unknown> | null;
-  editedOutput: Record<string, unknown> | null;
+  rawOutput: unknown;
+  editedOutput: unknown;
   approvedAt: Date | string | null;
 };
 
@@ -13,7 +13,7 @@ export type PacketSection = {
   title: string;
   stageName: string;
   status: PacketSectionStatus;
-  content: Record<string, unknown> | null;
+  content: unknown;
   approvedAt: string | null;
 };
 
