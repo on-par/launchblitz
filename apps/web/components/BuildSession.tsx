@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { ProgressStepper } from "@launchblitz/ui";
+import { STAGE_NAMES, stageLabel } from "../lib/stages";
 import { AvatarBuilder } from "./stages/AvatarBuilder";
 import { IdeaCapture } from "./stages/IdeaCapture";
 import { MarketValidation } from "./stages/MarketValidation";
 import { Positioning } from "./stages/Positioning";
 import { StageOutputEditor } from "./stages/StageOutputEditor";
-
-const steps = ["Idea", "Market", "Avatar", "Positioning", "Copy", "Brand", "Export", "Launch"];
 
 export interface StageOutputView {
   id: string;
@@ -53,7 +52,7 @@ export function BuildSession({ packetHref, stageOutputs = [], build }: BuildSess
         {build ? (
           <div className="mt-3 space-y-1 text-sm leading-6 text-[#ECEFF1]/76">
             <p>Status: {build.status}</p>
-            <p>Stage: {steps[build.currentStage] ?? steps[0]}</p>
+            <p>Stage: {stageLabel(build.currentStage)}</p>
             {build.seedIdea ? <p>&ldquo;{build.seedIdea}&rdquo;</p> : null}
           </div>
         ) : (
@@ -64,7 +63,7 @@ export function BuildSession({ packetHref, stageOutputs = [], build }: BuildSess
         )}
       </div>
       <div className="rounded-[1.8rem] border border-white/10 bg-white/[0.03] p-5">
-        <ProgressStepper currentStep={build ? build.currentStage : 2} steps={steps} />
+        <ProgressStepper currentStep={build ? build.currentStage : 2} steps={[...STAGE_NAMES]} />
       </div>
       {stageOutputs.length > 0 && (
         <div className="space-y-4">

@@ -7,11 +7,11 @@ import { SESSION_COOKIE } from "../../apps/web/lib/session";
 // keeps this in lockstep with the app if the cookie is ever renamed.
 export { SESSION_COOKIE };
 
-export async function signIn(context: BrowserContext) {
+export async function signIn(context: BrowserContext, userId = "e2e-session") {
   await context.addCookies([
     {
       name: SESSION_COOKIE,
-      value: "e2e-session",
+      value: userId,
       url: "http://127.0.0.1:3000",
       httpOnly: true,
       sameSite: "Lax",
