@@ -1,9 +1,10 @@
 import type { StageOutputRecord } from "@launchblitz/workflow";
 
-// Seam for the launch packet preview page. This is where the Drizzle query
-// over `stage_outputs` (via getDb() in apps/web/lib/db.ts) attaches once #16
-// and #18 land; until then it returns deterministic demo records so the
-// assembler and preview page can be exercised end-to-end.
+// Seam for the launch packet preview page and the packet/launch-kit export
+// routes. This is where the Drizzle query over `stage_outputs` (via getDb()
+// in apps/web/lib/db.ts) attaches once #16 and #18 land; until then it
+// returns deterministic demo records so the assembler, preview pages, and
+// downloads can all be exercised end-to-end against the same data.
 export async function getStageOutputRecords(buildId: string): Promise<StageOutputRecord[]> {
   void buildId;
 

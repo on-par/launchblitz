@@ -28,12 +28,17 @@ function SectionCard({ section }: { section: PacketSection }) {
   );
 }
 
+const DOWNLOAD_LINK_CLASSNAME =
+  "rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-sm font-semibold text-[#ECEFF1]/80 transition hover:border-[#FF4D00]/30 hover:bg-[#FF4D00]/10 hover:text-white";
+
 export function LaunchPacketPreview({
   packet,
   lovableHandoffHref,
+  exportHrefs,
 }: {
   packet: LaunchPacket;
   lovableHandoffHref?: string;
+  exportHrefs?: { markdown: string; json: string; launchKit: string };
 }) {
   return (
     <section className="space-y-8">
@@ -47,14 +52,29 @@ export function LaunchPacketPreview({
             Only founder-approved outputs are compiled into the launch packet below.
           </p>
         </div>
-        {lovableHandoffHref ? (
-          <Link
-            href={lovableHandoffHref}
-            className="rounded-full border border-[#FF4D00]/30 bg-[#FF4D00]/10 px-4 py-2 text-sm font-semibold text-[#ff9a71] transition hover:bg-[#FF4D00]/20"
-          >
-            Generate Lovable handoff
-          </Link>
-        ) : null}
+        <div className="flex flex-col items-end gap-3">
+          {lovableHandoffHref ? (
+            <Link
+              href={lovableHandoffHref}
+              className="rounded-full border border-[#FF4D00]/30 bg-[#FF4D00]/10 px-4 py-2 text-sm font-semibold text-[#ff9a71] transition hover:bg-[#FF4D00]/20"
+            >
+              Generate Lovable handoff
+            </Link>
+          ) : null}
+          {exportHrefs ? (
+            <div className="flex flex-wrap justify-end gap-3">
+              <a href={exportHrefs.markdown} className={DOWNLOAD_LINK_CLASSNAME}>
+                Download Markdown
+              </a>
+              <a href={exportHrefs.json} className={DOWNLOAD_LINK_CLASSNAME}>
+                Download JSON
+              </a>
+              <a href={exportHrefs.launchKit} className={DOWNLOAD_LINK_CLASSNAME}>
+                Download Launch Kit
+              </a>
+            </div>
+          ) : null}
+        </div>
       </header>
 
       {!packet.isComplete ? (
