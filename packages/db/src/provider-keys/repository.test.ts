@@ -5,7 +5,12 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { providerKeys } from "../schema";
 import type { Db } from "./repository";
-import { InMemoryProviderKeysRepository, listProviderKeyMeta, upsertProviderKey } from "./repository";
+import {
+  deleteProviderKey,
+  InMemoryProviderKeysRepository,
+  listProviderKeyMeta,
+  upsertProviderKey,
+} from "./repository";
 
 const DRIZZLE_DIR = join(__dirname, "..", "..", "drizzle");
 
@@ -98,6 +103,50 @@ describe("provider key repository", () => {
     const allRows = await db.select().from(providerKeys);
     expect(allRows).toHaveLength(2);
   });
+
+  it("deleteProviderKey removes only the requesting user's row and returns true", async () => {
+    await upsertProviderKey(db, {
+      userId: "user-a",
+      provider: "anthropic",
+      encryptedKey: "v1.iv.tag.user-a",
+      keyHint: "…aaaa",
+    });
+    await upsertProviderKey(db, {
+      userId: "user-b",
+      provider: "anthropic",
+      encryptedKey: "v1.iv.tag.user-b",
+      keyHint: "…bbbb",
+    });
+
+    const removed = await deleteProviderKey(db, "user-a", "anthropic");
+    expect(removed).toBe(true);
+
+    const userARows = await listProviderKeyMeta(db, "user-a");
+    expect(userARows).toHaveLength(0);
+
+    const allRows = await db.select().from(providerKeys);
+    expect(allRows).toHaveLength(1);
+    expect(allRows[0].userId).toBe("user-b");
+  });
+
+  it("deleteProviderKey returns false when no key is saved", async () => {
+    const removed = await deleteProviderKey(db, "user-a", "anthropic");
+    expect(removed).toBe(false);
+  });
+
+  it("a revoked key no longer appears in list metadata (post-revoke readiness)", async () => {
+    await upsertProviderKey(db, {
+      userId: "user-a",
+      provider: "anthropic",
+      encryptedKey: "v1.iv.tag.user-a",
+      keyHint: "…aaaa",
+    });
+
+    await deleteProviderKey(db, "user-a", "anthropic");
+
+    const rows = await listProviderKeyMeta(db, "user-a");
+    expect(rows).toEqual([]);
+  });
 });
 
 describe("InMemoryProviderKeysRepository", () => {
@@ -163,5 +212,43 @@ describe("InMemoryProviderKeysRepository", () => {
     for (const row of userARows) {
       expect(row).not.toHaveProperty("encryptedKey");
     }
+  });
+
+  it("delete removes the saved key and returns true; second delete returns false", async () => {
+    const repo = new InMemoryProviderKeysRepository();
+
+    await repo.upsert({
+      userId: "user-a",
+      provider: "anthropic",
+      encryptedKey: "v1.iv.tag.first",
+      keyHint: "…aaaa",
+    });
+
+    expect(await repo.delete("user-a", "anthropic")).toBe(true);
+    expect(await repo.list("user-a")).toEqual([]);
+    expect(await repo.delete("user-a", "anthropic")).toBe(false);
+  });
+
+  it("delete is scoped to the requesting user", async () => {
+    const repo = new InMemoryProviderKeysRepository();
+
+    await repo.upsert({
+      userId: "user-a",
+      provider: "anthropic",
+      encryptedKey: "v1.iv.tag.user-a",
+      keyHint: "…aaaa",
+    });
+    await repo.upsert({
+      userId: "user-b",
+      provider: "anthropic",
+      encryptedKey: "v1.iv.tag.user-b",
+      keyHint: "…bbbb",
+    });
+
+    await repo.delete("user-a", "anthropic");
+
+    const userBRows = await repo.list("user-b");
+    expect(userBRows).toHaveLength(1);
+    expect(userBRows[0].keyHint).toBe("…bbbb");
   });
 });

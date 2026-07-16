@@ -2,6 +2,7 @@ import {
   encryptProviderKey,
   maskProviderKey,
   MVP_PROVIDERS,
+  parseRevokeProviderKeyInput,
   parseSaveProviderKeyInput,
 } from "@launchblitz/db";
 import { NextResponse } from "next/server";
@@ -64,4 +65,31 @@ export async function PUT(request: Request) {
   });
 
   return NextResponse.json({ provider: row.provider, keyHint: row.keyHint, updatedAt: row.updatedAt });
+}
+
+export async function DELETE(request: Request) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
+
+  const parsed = parseRevokeProviderKeyInput(body);
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
+  }
+
+  const { provider } = parsed.value;
+  const removed = await getProviderKeysRepository().delete(session.userId, provider);
+  if (!removed) {
+    return NextResponse.json({ error: "No saved key for this provider." }, { status: 404 });
+  }
+
+  return NextResponse.json({ provider, revoked: true });
 }

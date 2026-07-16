@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseSaveProviderKeyInput } from "./validation";
+import { parseRevokeProviderKeyInput, parseSaveProviderKeyInput } from "./validation";
 
 describe("parseSaveProviderKeyInput", () => {
   it("accepts a valid anthropic key", () => {
@@ -61,5 +61,27 @@ describe("parseSaveProviderKeyInput", () => {
         expect(result.error).not.toContain(secretKey);
       }
     }
+  });
+});
+
+describe("parseRevokeProviderKeyInput", () => {
+  it("accepts a valid anthropic provider", () => {
+    const result = parseRevokeProviderKeyInput({ provider: "anthropic" });
+    expect(result).toEqual({ ok: true, value: { provider: "anthropic" } });
+  });
+
+  it("rejects an unsupported provider", () => {
+    const result = parseRevokeProviderKeyInput({ provider: "openai" });
+    expect(result).toEqual({ ok: false, error: "Unsupported provider." });
+  });
+
+  it("rejects a missing provider", () => {
+    const result = parseRevokeProviderKeyInput({});
+    expect(result).toEqual({ ok: false, error: "Unsupported provider." });
+  });
+
+  it("rejects a non-object body", () => {
+    expect(parseRevokeProviderKeyInput(null).ok).toBe(false);
+    expect(parseRevokeProviderKeyInput("not-an-object").ok).toBe(false);
   });
 });

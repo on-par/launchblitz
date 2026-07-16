@@ -31,6 +31,7 @@ function mockReadyProviderKeys() {
   mockedGetProviderKeysRepository.mockReturnValue({
     list: vi.fn().mockResolvedValue([{ id: "row-1", provider: "anthropic", keyHint: "…abcd", createdAt: null, updatedAt: null }]),
     upsert: vi.fn(),
+    delete: vi.fn(),
   });
 }
 
@@ -109,6 +110,7 @@ describe("builds route", () => {
     mockedGetProviderKeysRepository.mockReturnValue({
       list: vi.fn().mockResolvedValue([]),
       upsert: vi.fn(),
+      delete: vi.fn(),
     });
 
     const response = await post({ idea: "A tax planner for creators" });
@@ -118,6 +120,22 @@ describe("builds route", () => {
     expect(body.error).toContain("key vault");
 
     const builds = await getBuildsRepository().listForUser("user-missing-key");
+    expect(builds).toHaveLength(0);
+  });
+
+  it("returns 409 when the founder has revoked their provider key", async () => {
+    mockedGetSession.mockResolvedValue({ userId: "user-revoked-key" });
+    mockedGetProviderKeysRepository.mockReturnValue({
+      list: vi.fn().mockResolvedValue([]),
+      upsert: vi.fn(),
+      delete: vi.fn(),
+    });
+
+    const response = await post({ idea: "A tax planner for creators" });
+
+    expect(response.status).toBe(409);
+
+    const builds = await getBuildsRepository().listForUser("user-revoked-key");
     expect(builds).toHaveLength(0);
   });
 });
