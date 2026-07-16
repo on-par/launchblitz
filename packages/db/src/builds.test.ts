@@ -8,6 +8,7 @@ import {
   DrizzleBuildsRepository,
   INITIAL_BUILD_STATUS,
   InMemoryBuildsRepository,
+  nextStageAfterApproval,
   SEED_IDEA_MAX_LENGTH,
   validateSeedIdea,
 } from "./builds";
@@ -62,6 +63,24 @@ describe("validateSeedIdea", () => {
   });
 });
 
+describe("nextStageAfterApproval", () => {
+  it("advances by one when approving the build's current stage", () => {
+    expect(nextStageAfterApproval(0, 0, 8)).toBe(1);
+  });
+
+  it("is a no-op when re-approving an earlier stage", () => {
+    expect(nextStageAfterApproval(0, 3, 8)).toBe(3);
+  });
+
+  it("is a no-op when approving a future (locked) stage", () => {
+    expect(nextStageAfterApproval(5, 2, 8)).toBe(2);
+  });
+
+  it("clamps at the last stage", () => {
+    expect(nextStageAfterApproval(7, 7, 8)).toBe(7);
+  });
+});
+
 describe("InMemoryBuildsRepository", () => {
   it("creates a record with the given userId/seedIdea, initial status, stage, and a uuid id", async () => {
     const repo = new InMemoryBuildsRepository();
@@ -87,6 +106,29 @@ describe("InMemoryBuildsRepository", () => {
   it("returns null for an unknown id", async () => {
     const repo = new InMemoryBuildsRepository();
     expect(await repo.getForUser(crypto.randomUUID(), "user-a")).toBeNull();
+  });
+
+  describe("setCurrentStageForUser", () => {
+    it("updates currentStage, refreshes updatedAt, and returns the record", async () => {
+      const repo = new InMemoryBuildsRepository();
+      const created = await repo.create({ userId: "user-a", seedIdea: "A tax planner" });
+
+      const updated = await repo.setCurrentStageForUser(created.id, "user-a", 1);
+      expect(updated?.currentStage).toBe(1);
+      expect(updated?.updatedAt?.getTime()).toBeGreaterThanOrEqual(
+        created.updatedAt?.getTime() ?? 0,
+      );
+    });
+
+    it("returns null for a non-owner and leaves the row unmutated", async () => {
+      const repo = new InMemoryBuildsRepository();
+      const created = await repo.create({ userId: "user-a", seedIdea: "A tax planner" });
+
+      expect(await repo.setCurrentStageForUser(created.id, "user-b", 5)).toBeNull();
+
+      const fetched = await repo.getForUser(created.id, "user-a");
+      expect(fetched?.currentStage).toBe(0);
+    });
   });
 
   describe("listForUser", () => {
@@ -133,6 +175,7 @@ describe("DrizzleBuildsRepository", () => {
     const repo = new DrizzleBuildsRepository(throwingDb);
 
     await expect(repo.getForUser("not-a-uuid", "user-a")).resolves.toBeNull();
+    await expect(repo.setCurrentStageForUser("not-a-uuid", "user-a", 1)).resolves.toBeNull();
   });
 
   describe("listForUser (PGlite)", () => {

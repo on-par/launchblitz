@@ -56,6 +56,7 @@ export interface StageOutputDisplay {
   stageName: string;
   rawText: string;
   editedText: string | null;
+  approvedAt: string | null;
 }
 
 /** Shared by the API route response and the session page's server-side fetch. */
@@ -67,6 +68,7 @@ export function toStageOutputView(record: StageOutputRecord): StageOutputDisplay
     stageName: record.stageName,
     rawText: stageOutputText(record.rawOutput),
     editedText: record.editedOutput === null ? null : stageOutputText(record.editedOutput),
+    approvedAt: record.approvedAt?.toISOString() ?? null,
   };
 }
 
@@ -110,12 +112,23 @@ export interface StageOutputsRepository {
     userId: string,
   ): Promise<StageOutputRecord | null>;
   listForUser(buildId: string, userId: string): Promise<StageOutputRecord[]>;
-  /** Overwrite editedOutput only (rawOutput untouched). Null when missing/not owned. */
+  /**
+   * Overwrite editedOutput only (rawOutput untouched). Also clears
+   * `approvedAt`: the workflow must only ever advance on a version the
+   * founder explicitly chose, so an edit made after approval requires
+   * re-approval. Null when missing/not owned.
+   */
   saveEditForUser(
     buildId: string,
     stageIndex: number,
     userId: string,
     editedOutput: unknown,
+  ): Promise<StageOutputRecord | null>;
+  /** Stamp approvedAt on the output. Null when missing/not owned. */
+  approveForUser(
+    buildId: string,
+    stageIndex: number,
+    userId: string,
   ): Promise<StageOutputRecord | null>;
 }
 
@@ -209,7 +222,25 @@ export class DrizzleStageOutputsRepository implements StageOutputsRepository {
     }
     const [row] = await this.db
       .update(stageOutputs)
-      .set({ editedOutput })
+      .set({ editedOutput, approvedAt: null })
+      .where(
+        and(eq(stageOutputs.buildId, buildId), eq(stageOutputs.stageIndex, stageIndex)),
+      )
+      .returning();
+    return row ? toRecord(row) : null;
+  }
+
+  async approveForUser(
+    buildId: string,
+    stageIndex: number,
+    userId: string,
+  ): Promise<StageOutputRecord | null> {
+    if (!(await this.isOwnedByUser(buildId, userId))) {
+      return null;
+    }
+    const [row] = await this.db
+      .update(stageOutputs)
+      .set({ approvedAt: new Date() })
       .where(
         and(eq(stageOutputs.buildId, buildId), eq(stageOutputs.stageIndex, stageIndex)),
       )
@@ -294,6 +325,20 @@ export class InMemoryStageOutputsRepository implements StageOutputsRepository {
       return null;
     }
     row.editedOutput = editedOutput;
+    row.approvedAt = null;
+    return this.copy(row);
+  }
+
+  async approveForUser(
+    buildId: string,
+    stageIndex: number,
+    userId: string,
+  ): Promise<StageOutputRecord | null> {
+    const row = this.rows.get(this.key(buildId, stageIndex));
+    if (!row || row.ownerUserId !== userId) {
+      return null;
+    }
+    row.approvedAt = new Date();
     return this.copy(row);
   }
 }
