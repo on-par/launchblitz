@@ -1,6 +1,7 @@
 import { toStageOutputView } from "@launchblitz/db";
 import { BuildSession, type StageOutputView } from "../../../../../components/BuildSession";
 import { getSession } from "../../../../../lib/auth";
+import { getBuildsRepository } from "../../../../../lib/builds";
 import { getStageOutputsRepository } from "../../../../../lib/stage-outputs";
 
 interface BuildPageProps {
@@ -17,7 +18,13 @@ export default async function BuildPage({ params }: BuildPageProps) {
     stageOutputs = records.map(toStageOutputView);
   }
 
+  const build = session ? await getBuildsRepository().getForUser(id, session.userId) : null;
+
   return (
-    <BuildSession packetHref={`/dashboard/builds/${id}/packet`} stageOutputs={stageOutputs} />
+    <BuildSession
+      packetHref={`/dashboard/builds/${id}/packet`}
+      stageOutputs={stageOutputs}
+      build={build ? { status: build.status, currentStage: build.currentStage, seedIdea: build.seedIdea } : undefined}
+    />
   );
 }

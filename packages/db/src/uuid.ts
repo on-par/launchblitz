@@ -1,0 +1,8 @@
+// Postgres uuid columns throw on comparison against a non-uuid string, so
+// guard lookups and treat malformed ids as "not found" instead.
+export const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isUuid(value: string): boolean {
+  return UUID_PATTERN.test(value);
+}
