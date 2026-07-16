@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { builds } from "./schema";
 import type { Db } from "./provider-keys/repository";
 import { isUuid } from "./uuid";
@@ -40,6 +40,7 @@ export interface BuildRecord {
   currentStage: number;
   seedIdea: string | null;
   createdAt: Date | null;
+  updatedAt: Date | null;
 }
 
 export interface CreateBuildInput {
@@ -57,6 +58,8 @@ export interface BuildsRepository {
   create(input: CreateBuildInput): Promise<BuildRecord>;
   /** Ownership-gated read: null when missing OR when the build isn't the user's. */
   getForUser(buildId: string, userId: string): Promise<BuildRecord | null>;
+  /** All of the given founder's builds, most recently updated first. */
+  listForUser(userId: string): Promise<BuildRecord[]>;
 }
 
 type BuildRow = typeof builds.$inferSelect;
@@ -69,6 +72,7 @@ function toRecord(row: BuildRow): BuildRecord {
     currentStage: row.currentStage ?? 0,
     seedIdea: row.seedIdea ?? null,
     createdAt: row.createdAt ?? null,
+    updatedAt: row.updatedAt ?? null,
   };
 }
 
@@ -100,6 +104,15 @@ export class DrizzleBuildsRepository implements BuildsRepository {
       .limit(1);
     return row ? toRecord(row) : null;
   }
+
+  async listForUser(userId: string): Promise<BuildRecord[]> {
+    const rows = await this.db
+      .select()
+      .from(builds)
+      .where(eq(builds.userId, userId))
+      .orderBy(desc(builds.updatedAt), desc(builds.createdAt));
+    return rows.map(toRecord);
+  }
 }
 
 /**
@@ -120,6 +133,7 @@ export class InMemoryBuildsRepository implements BuildsRepository {
       currentStage: INITIAL_STAGE_INDEX,
       seedIdea: input.seedIdea,
       createdAt: new Date(),
+      updatedAt: new Date(),
     };
     this.rows.set(row.id, row);
     return this.copy(row);
@@ -131,5 +145,12 @@ export class InMemoryBuildsRepository implements BuildsRepository {
       return null;
     }
     return this.copy(row);
+  }
+
+  async listForUser(userId: string): Promise<BuildRecord[]> {
+    return [...this.rows.values()]
+      .filter((row) => row.userId === userId)
+      .sort((a, b) => (b.updatedAt?.getTime() ?? 0) - (a.updatedAt?.getTime() ?? 0))
+      .map((row) => this.copy(row));
   }
 }

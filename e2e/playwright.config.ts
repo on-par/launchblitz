@@ -3,6 +3,8 @@ import path from "path";
 
 export default defineConfig({
   testDir: ".",
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
   use: {
     baseURL: "http://127.0.0.1:3000",
     channel: "chrome",
