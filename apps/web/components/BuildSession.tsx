@@ -21,9 +21,10 @@ export interface BuildSessionProps {
   packetHref?: string;
   stageOutputs?: StageOutputView[];
   build?: { status: string; currentStage: number; seedIdea: string | null };
+  resume?: { stageIndex: number; complete: boolean };
 }
 
-export function BuildSession({ packetHref, stageOutputs = [], build }: BuildSessionProps) {
+export function BuildSession({ packetHref, stageOutputs = [], build, resume }: BuildSessionProps) {
   return (
     <section className="space-y-8">
       <header className="flex items-start justify-between gap-4">
@@ -54,6 +55,11 @@ export function BuildSession({ packetHref, stageOutputs = [], build }: BuildSess
           <div className="mt-3 space-y-1 text-sm leading-6 text-[#ECEFF1]/76">
             <p>Status: {build.status}</p>
             <p>Stage: {stageLabel(build.currentStage)}</p>
+            {resume?.complete ? (
+              <p>All stages approved — preview your launch packet.</p>
+            ) : resume ? (
+              <p>Resume from: {stageLabel(resume.stageIndex)}</p>
+            ) : null}
             {build.seedIdea ? <p>&ldquo;{build.seedIdea}&rdquo;</p> : null}
           </div>
         ) : (
@@ -64,7 +70,10 @@ export function BuildSession({ packetHref, stageOutputs = [], build }: BuildSess
         )}
       </div>
       <div className="rounded-[1.8rem] border border-white/10 bg-white/[0.03] p-5">
-        <ProgressStepper currentStep={build ? build.currentStage : 2} steps={[...STAGE_NAMES]} />
+        <ProgressStepper
+          currentStep={resume ? resume.stageIndex : build ? build.currentStage : 2}
+          steps={[...STAGE_NAMES]}
+        />
       </div>
       {stageOutputs.length > 0 && (
         <div className="space-y-4">

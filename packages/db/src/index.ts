@@ -1,5 +1,6 @@
 export * from "./schema";
 export * from "./builds";
+export * from "./resume";
 export * from "./stage-outputs";
 export * from "./provider-keys/crypto";
 export * from "./provider-keys/validation";
