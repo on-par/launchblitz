@@ -35,6 +35,16 @@ function toIsoString(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 }
 
+/**
+ * The canonical content downstream stages and the launch packet consume:
+ * the approved edited version when present, otherwise the approved raw
+ * version. Unapproved records yield null — downstream never sees them.
+ */
+export function approvedStageContent(record: StageOutputRecord): Record<string, unknown> | null {
+  if (record.approvedAt === null) return null;
+  return record.editedOutput ?? record.rawOutput;
+}
+
 export function assembleLaunchPacket(
   records: StageOutputRecord[],
   options?: { includeDrafts?: boolean },
@@ -58,7 +68,7 @@ export function assembleLaunchPacket(
         title: definition.title,
         stageName: definition.stageName,
         status: "approved",
-        content: latest.editedOutput ?? latest.rawOutput,
+        content: approvedStageContent(latest),
         approvedAt: toIsoString(latest.approvedAt as Date | string),
       };
       return section;

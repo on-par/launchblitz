@@ -115,6 +115,21 @@ describe("stage output route", () => {
     expect((await patch(buildId, 0, { editedContent: "x" })).status).toBe(404);
   });
 
+  it("PATCH after approval clears approvedAt", async () => {
+    const buildId = crypto.randomUUID();
+    mockedGetSession.mockResolvedValue({ userId: "user-a" });
+    await getStageOutputsRepository().create(
+      { buildId, stageIndex: 0, stageName: "Idea capture", rawOutput: "raw output" },
+      "user-a",
+    );
+    await getStageOutputsRepository().approveForUser(buildId, 0, "user-a");
+
+    const response = await patch(buildId, 0, { editedContent: "edited after approval" });
+    expect(response.status).toBe(200);
+    const data = (await response.json()) as { stageOutput: { approvedAt: string | null } };
+    expect(data.stageOutput.approvedAt).toBeNull();
+  });
+
   it("returns 404 for a stageIndex beyond the Postgres int4 range instead of erroring", async () => {
     mockedGetSession.mockResolvedValue({ userId: "user-a" });
     const buildId = crypto.randomUUID();

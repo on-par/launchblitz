@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assembleLaunchPacket, type StageOutputRecord } from "./packet";
+import { approvedStageContent, assembleLaunchPacket, type StageOutputRecord } from "./packet";
 
 function record(overrides: Partial<StageOutputRecord>): StageOutputRecord {
   return {
@@ -11,6 +11,41 @@ function record(overrides: Partial<StageOutputRecord>): StageOutputRecord {
     ...overrides,
   };
 }
+
+describe("approvedStageContent", () => {
+  it("returns the edited content for an approved record with editedOutput", () => {
+    const content = approvedStageContent(
+      record({
+        rawOutput: { summary: "raw" },
+        editedOutput: { summary: "edited" },
+        approvedAt: new Date("2026-07-10T10:00:00Z"),
+      }),
+    );
+    expect(content).toEqual({ summary: "edited" });
+  });
+
+  it("falls back to rawOutput for an approved record with no editedOutput", () => {
+    const content = approvedStageContent(
+      record({
+        rawOutput: { summary: "raw" },
+        editedOutput: null,
+        approvedAt: new Date("2026-07-10T10:00:00Z"),
+      }),
+    );
+    expect(content).toEqual({ summary: "raw" });
+  });
+
+  it("returns null for an unapproved record, even when editedOutput is present", () => {
+    const content = approvedStageContent(
+      record({
+        rawOutput: { summary: "raw" },
+        editedOutput: { summary: "edited" },
+        approvedAt: null,
+      }),
+    );
+    expect(content).toBeNull();
+  });
+});
 
 describe("assembleLaunchPacket", () => {
   it("excludes unapproved drafts by default and marks the section missing", () => {

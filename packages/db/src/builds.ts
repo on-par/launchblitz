@@ -32,6 +32,20 @@ export function validateSeedIdea(raw: unknown): SeedIdeaValidation {
 export const INITIAL_BUILD_STATUS = "active";
 export const INITIAL_STAGE_INDEX = 0;
 
+/**
+ * currentStage after a successful approval. Only approving the build's
+ * current stage advances it (re-approving an earlier stage is a no-op),
+ * and the index is clamped to the last stage.
+ */
+export function nextStageAfterApproval(
+  approvedStageIndex: number,
+  currentStage: number,
+  stageCount: number,
+): number {
+  if (approvedStageIndex !== currentStage) return currentStage;
+  return Math.min(approvedStageIndex + 1, stageCount - 1);
+}
+
 /** A persisted Build as returned to callers. */
 export interface BuildRecord {
   id: string;
@@ -60,6 +74,12 @@ export interface BuildsRepository {
   getForUser(buildId: string, userId: string): Promise<BuildRecord | null>;
   /** All of the given founder's builds, most recently updated first. */
   listForUser(userId: string): Promise<BuildRecord[]>;
+  /** Ownership-gated currentStage update; refreshes updatedAt. Null when missing/not owned. */
+  setCurrentStageForUser(
+    buildId: string,
+    userId: string,
+    currentStage: number,
+  ): Promise<BuildRecord | null>;
 }
 
 type BuildRow = typeof builds.$inferSelect;
@@ -113,6 +133,22 @@ export class DrizzleBuildsRepository implements BuildsRepository {
       .orderBy(desc(builds.updatedAt), desc(builds.createdAt));
     return rows.map(toRecord);
   }
+
+  async setCurrentStageForUser(
+    buildId: string,
+    userId: string,
+    currentStage: number,
+  ): Promise<BuildRecord | null> {
+    if (!isUuid(buildId)) {
+      return null;
+    }
+    const [row] = await this.db
+      .update(builds)
+      .set({ currentStage, updatedAt: new Date() })
+      .where(and(eq(builds.id, buildId), eq(builds.userId, userId)))
+      .returning();
+    return row ? toRecord(row) : null;
+  }
 }
 
 /**
@@ -152,5 +188,19 @@ export class InMemoryBuildsRepository implements BuildsRepository {
       .filter((row) => row.userId === userId)
       .sort((a, b) => (b.updatedAt?.getTime() ?? 0) - (a.updatedAt?.getTime() ?? 0))
       .map((row) => this.copy(row));
+  }
+
+  async setCurrentStageForUser(
+    buildId: string,
+    userId: string,
+    currentStage: number,
+  ): Promise<BuildRecord | null> {
+    const row = this.rows.get(buildId);
+    if (!row || row.userId !== userId) {
+      return null;
+    }
+    row.currentStage = currentStage;
+    row.updatedAt = new Date();
+    return this.copy(row);
   }
 }

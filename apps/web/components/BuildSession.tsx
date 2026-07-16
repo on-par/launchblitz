@@ -14,6 +14,7 @@ export interface StageOutputView {
   stageName: string;
   rawText: string;
   editedText: string | null;
+  approvedAt: string | null;
 }
 
 export interface BuildSessionProps {
