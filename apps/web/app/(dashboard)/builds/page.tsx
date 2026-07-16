@@ -1,4 +1,5 @@
 import { StageCard } from "@launchblitz/ui";
+import { StartBuildForm } from "../../../components/StartBuildForm";
 
 const builds = [
   { name: "Creator tax planner", stage: "Avatar", status: "Active" },
@@ -14,21 +15,26 @@ const metrics = [
 export default function BuildsPage() {
   return (
     <section className="space-y-8">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-sm uppercase tracking-[0.3em] text-[#CFD8DC]/45">Dashboard</p>
-          <h1 className="mt-2 text-4xl font-semibold tracking-[-0.05em] text-white">
-            Build sessions
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#CFD8DC]/66">
-            Run the full LaunchBlitz sequence, review the outputs at each stage, and keep
-            your launch packet moving without bouncing between tools.
-          </p>
-        </div>
-        <button className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e94700]">
-          Start new build
-        </button>
+      <header>
+        <p className="text-sm uppercase tracking-[0.3em] text-[#CFD8DC]/45">Dashboard</p>
+        <h1 className="mt-2 text-4xl font-semibold tracking-[-0.05em] text-white">
+          Build sessions
+        </h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-[#CFD8DC]/66">
+          Run the full LaunchBlitz sequence, review the outputs at each stage, and keep
+          your launch packet moving without bouncing between tools.
+        </p>
       </header>
+
+      <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-5">
+        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#CFD8DC]/46">
+          New build
+        </p>
+        <h2 className="mt-2 text-xl font-semibold text-white">What are you launching?</h2>
+        <div className="mt-4">
+          <StartBuildForm />
+        </div>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         {metrics.map((metric) => (

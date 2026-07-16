@@ -20,9 +20,10 @@ export interface StageOutputView {
 export interface BuildSessionProps {
   packetHref?: string;
   stageOutputs?: StageOutputView[];
+  build?: { status: string; currentStage: number; seedIdea: string | null };
 }
 
-export function BuildSession({ packetHref, stageOutputs = [] }: BuildSessionProps) {
+export function BuildSession({ packetHref, stageOutputs = [], build }: BuildSessionProps) {
   return (
     <section className="space-y-8">
       <header className="flex items-start justify-between gap-4">
@@ -49,13 +50,21 @@ export function BuildSession({ packetHref, stageOutputs = [] }: BuildSessionProp
         <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#ff9a71]">
           Session status
         </p>
-        <p className="mt-3 text-sm leading-6 text-[#ECEFF1]/76">
-          The founder stays in approval control while the workflow keeps the output chain
-          moving across the whole launch packet.
-        </p>
+        {build ? (
+          <div className="mt-3 space-y-1 text-sm leading-6 text-[#ECEFF1]/76">
+            <p>Status: {build.status}</p>
+            <p>Stage: {steps[build.currentStage] ?? steps[0]}</p>
+            {build.seedIdea ? <p>&ldquo;{build.seedIdea}&rdquo;</p> : null}
+          </div>
+        ) : (
+          <p className="mt-3 text-sm leading-6 text-[#ECEFF1]/76">
+            The founder stays in approval control while the workflow keeps the output chain
+            moving across the whole launch packet.
+          </p>
+        )}
       </div>
       <div className="rounded-[1.8rem] border border-white/10 bg-white/[0.03] p-5">
-        <ProgressStepper currentStep={2} steps={steps} />
+        <ProgressStepper currentStep={build ? build.currentStage : 2} steps={steps} />
       </div>
       {stageOutputs.length > 0 && (
         <div className="space-y-4">

@@ -1,11 +1,10 @@
 import { and, eq } from "drizzle-orm";
 import { builds, stageOutputs } from "./schema";
 import type { Db } from "./provider-keys/repository";
+import { UUID_PATTERN } from "./uuid";
 
 // Stage outputs are Postgres uuids; a non-uuid string makes the uuid column
 // comparison throw, so guard lookups and treat malformed ids as "not found".
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const EDITED_CONTENT_MAX_LENGTH = 20_000;
 
