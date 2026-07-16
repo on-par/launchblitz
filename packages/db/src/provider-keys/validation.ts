@@ -47,3 +47,19 @@ export function parseSaveProviderKeyInput(body: unknown): ParsedSaveProviderKeyI
 
   return { ok: true, value: { provider, key: trimmed } };
 }
+
+export type ParsedRevokeProviderKeyInput =
+  | { ok: true; value: { provider: MvpProvider } }
+  | { ok: false; error: string };
+
+/** Validate the body of a revoke-provider-key request. */
+export function parseRevokeProviderKeyInput(body: unknown): ParsedRevokeProviderKeyInput {
+  if (typeof body !== "object" || body === null) {
+    return { ok: false, error: "Request body must be an object." };
+  }
+  const { provider } = body as Record<string, unknown>;
+  if (!isMvpProvider(provider)) {
+    return { ok: false, error: "Unsupported provider." };
+  }
+  return { ok: true, value: { provider } };
+}

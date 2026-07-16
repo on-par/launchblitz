@@ -10,16 +10,24 @@ vi.mock("../../../lib/provider-keys", () => ({
   getProviderKeysRepository: vi.fn(),
 }));
 
-const { GET, PUT } = await import("./route");
+const { DELETE, GET, PUT } = await import("./route");
 
 const mockedGetSession = vi.mocked(getSession);
 const mockedGetProviderKeysRepository = vi.mocked(getProviderKeysRepository);
 const mockedUpsert = vi.fn();
 const mockedList = vi.fn();
+const mockedDelete = vi.fn();
 
 function putRequest(body: unknown) {
   return new Request("http://localhost/api/keys", {
     method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+function deleteRequest(body: unknown) {
+  return new Request("http://localhost/api/keys", {
+    method: "DELETE",
     body: JSON.stringify(body),
   });
 }
@@ -31,8 +39,13 @@ describe("/api/keys", () => {
     mockedGetProviderKeysRepository.mockReset();
     mockedUpsert.mockReset();
     mockedList.mockReset();
+    mockedDelete.mockReset();
     mockedList.mockResolvedValue([]);
-    mockedGetProviderKeysRepository.mockReturnValue({ list: mockedList, upsert: mockedUpsert });
+    mockedGetProviderKeysRepository.mockReturnValue({
+      list: mockedList,
+      upsert: mockedUpsert,
+      delete: mockedDelete,
+    });
   });
 
   afterEach(() => {
@@ -148,6 +161,102 @@ describe("/api/keys", () => {
 
       expect(res.status).toBe(400);
       expect(mockedUpsert).not.toHaveBeenCalled();
+    });
+
+    it("rotates an existing key: a second save replaces the hint and updatedAt without leaking either plaintext", async () => {
+      mockedGetSession.mockResolvedValue({ userId: "user-1" });
+
+      mockedUpsert.mockResolvedValueOnce({
+        id: "row-1",
+        provider: "anthropic",
+        keyHint: "…-111",
+        createdAt: new Date("2026-01-01"),
+        updatedAt: new Date("2026-01-01"),
+      });
+      const firstPlaintext = "sk-ant-first-key-111";
+      const firstRes = await PUT(putRequest({ provider: "anthropic", key: firstPlaintext }));
+      const firstBody = await firstRes.json();
+
+      mockedUpsert.mockResolvedValueOnce({
+        id: "row-1",
+        provider: "anthropic",
+        keyHint: "…-222",
+        createdAt: new Date("2026-01-01"),
+        updatedAt: new Date("2026-01-02"),
+      });
+      const secondPlaintext = "sk-ant-second-key-222";
+      const secondRes = await PUT(putRequest({ provider: "anthropic", key: secondPlaintext }));
+      const secondBody = await secondRes.json();
+
+      expect(secondRes.status).toBe(200);
+      expect(secondBody.keyHint).toBe("…-222");
+      expect(secondBody.updatedAt).not.toBe(firstBody.updatedAt);
+
+      expect(mockedUpsert).toHaveBeenCalledTimes(2);
+      const firstCall = mockedUpsert.mock.calls[0][0];
+      const secondCall = mockedUpsert.mock.calls[1][0];
+      expect(firstCall.encryptedKey).not.toBe(secondCall.encryptedKey);
+
+      const stringifiedFirst = JSON.stringify(firstBody);
+      const stringifiedSecond = JSON.stringify(secondBody);
+      expect(stringifiedFirst).not.toContain(firstPlaintext);
+      expect(stringifiedFirst).not.toContain(secondPlaintext);
+      expect(stringifiedSecond).not.toContain(firstPlaintext);
+      expect(stringifiedSecond).not.toContain(secondPlaintext);
+    });
+  });
+
+  describe("DELETE", () => {
+    it("returns 401 when there is no session, without calling delete", async () => {
+      mockedGetSession.mockResolvedValue(null);
+
+      const res = await DELETE(deleteRequest({ provider: "anthropic" }));
+
+      expect(res.status).toBe(401);
+      expect(mockedDelete).not.toHaveBeenCalled();
+    });
+
+    it("revokes a saved key scoped to the session's userId", async () => {
+      mockedGetSession.mockResolvedValue({ userId: "user-1" });
+      mockedDelete.mockResolvedValue(true);
+
+      const res = await DELETE(deleteRequest({ provider: "anthropic" }));
+      const body = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(mockedDelete).toHaveBeenCalledWith("user-1", "anthropic");
+      expect(body).toEqual({ provider: "anthropic", revoked: true });
+      expect(JSON.stringify(body)).not.toContain("keyHint");
+      expect(JSON.stringify(body)).not.toContain("encryptedKey");
+    });
+
+    it("returns 404 when no key is saved", async () => {
+      mockedGetSession.mockResolvedValue({ userId: "user-1" });
+      mockedDelete.mockResolvedValue(false);
+
+      const res = await DELETE(deleteRequest({ provider: "anthropic" }));
+
+      expect(res.status).toBe(404);
+    });
+
+    it("returns 400 for an unsupported provider without calling delete", async () => {
+      mockedGetSession.mockResolvedValue({ userId: "user-1" });
+
+      const res = await DELETE(deleteRequest({ provider: "openai" }));
+
+      expect(res.status).toBe(400);
+      expect(mockedDelete).not.toHaveBeenCalled();
+    });
+
+    it("returns 400 for an invalid JSON body", async () => {
+      mockedGetSession.mockResolvedValue({ userId: "user-1" });
+
+      const res = await DELETE(
+        new Request("http://localhost/api/keys", { method: "DELETE", body: "not-json" }),
+      );
+
+      expect(res.status).toBe(400);
+      expect(mockedDelete).not.toHaveBeenCalled();
     });
   });
 });

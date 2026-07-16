@@ -20,6 +20,7 @@ export function KeyVault({ returnHref }: KeyVaultProps = {}) {
   const [state, setState] = useState<AnthropicKeyState>({ saved: false, keyHint: null, updatedAt: null });
   const [key, setKey] = useState("");
   const [saving, setSaving] = useState(false);
+  const [revoking, setRevoking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,6 +79,29 @@ export function KeyVault({ returnHref }: KeyVaultProps = {}) {
     }
   }
 
+  async function handleRevoke() {
+    setRevoking(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/keys", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider: "anthropic" }),
+      });
+      if (!res.ok) {
+        const body = await res.json();
+        setError(body.error ?? "Failed to revoke key.");
+        return;
+      }
+      setState({ saved: false, keyHint: null, updatedAt: null });
+    } catch {
+      setError("Failed to revoke key.");
+    } finally {
+      setRevoking(false);
+    }
+  }
+
   return (
     <section className="space-y-8">
       {returnHref ? (
@@ -103,9 +127,16 @@ export function KeyVault({ returnHref }: KeyVaultProps = {}) {
               </p>
             </div>
             {!loading && state.saved && (
-              <span className="whitespace-nowrap rounded-full border border-[#FF4D00]/30 bg-[#FF4D00]/10 px-4 py-2 text-sm font-semibold text-[#ff9a71]">
-                Saved &middot; {state.keyHint}
-              </span>
+              <div className="flex flex-col items-end gap-1">
+                <span className="whitespace-nowrap rounded-full border border-[#FF4D00]/30 bg-[#FF4D00]/10 px-4 py-2 text-sm font-semibold text-[#ff9a71]">
+                  Saved &middot; {state.keyHint}
+                </span>
+                {state.updatedAt && (
+                  <span className="text-xs text-[#CFD8DC]/45">
+                    Updated {new Date(state.updatedAt).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
             )}
           </div>
           <form className="mt-4 flex flex-col gap-3 sm:flex-row" onSubmit={handleSave}>
@@ -122,8 +153,18 @@ export function KeyVault({ returnHref }: KeyVaultProps = {}) {
               disabled={saving || key.length === 0}
               className="rounded-full border border-[#FF4D00]/30 bg-[#FF4D00]/10 px-4 py-2 text-sm font-semibold text-[#ff9a71] transition hover:bg-[#FF4D00] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {saving ? "Saving..." : "Save"}
+              {saving ? "Saving..." : state.saved ? "Replace" : "Save"}
             </button>
+            {state.saved && (
+              <button
+                type="button"
+                onClick={handleRevoke}
+                disabled={revoking || saving}
+                className="rounded-full border border-red-400/30 bg-red-400/10 px-4 py-2 text-sm font-semibold text-red-400 transition hover:bg-red-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {revoking ? "Revoking..." : "Revoke"}
+              </button>
+            )}
           </form>
           {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
         </article>

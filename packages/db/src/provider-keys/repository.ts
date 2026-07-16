@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { providerKeys } from "../schema";
 
@@ -49,6 +49,15 @@ export async function listProviderKeyMeta(db: Db, userId: string) {
     .where(eq(providerKeys.userId, userId));
 }
 
+/** Delete a user's key for a provider. Returns true when a row was removed. */
+export async function deleteProviderKey(db: Db, userId: string, provider: string): Promise<boolean> {
+  const rows = await db
+    .delete(providerKeys)
+    .where(and(eq(providerKeys.userId, userId), eq(providerKeys.provider, provider)))
+    .returning({ id: providerKeys.id });
+  return rows.length > 0;
+}
+
 /** Metadata only — never returns encryptedKey. */
 export interface ProviderKeyMetaRecord {
   id: string;
@@ -68,6 +77,8 @@ export interface ProviderKeysRepository {
   /** Metadata only — never returns encryptedKey. */
   list(userId: string): Promise<ProviderKeyMetaRecord[]>;
   upsert(input: UpsertProviderKeyInput): Promise<ProviderKeyMetaRecord>;
+  /** Revoke: removes the stored key. Returns false when nothing was saved. */
+  delete(userId: string, provider: string): Promise<boolean>;
 }
 
 /** Drizzle/Postgres-backed repository used at runtime when DATABASE_URL is set. */
@@ -80,6 +91,10 @@ export class DrizzleProviderKeysRepository implements ProviderKeysRepository {
 
   async upsert(input: UpsertProviderKeyInput): Promise<ProviderKeyMetaRecord> {
     return upsertProviderKey(this.db, input);
+  }
+
+  async delete(userId: string, provider: string): Promise<boolean> {
+    return deleteProviderKey(this.db, userId, provider);
   }
 }
 
@@ -131,5 +146,9 @@ export class InMemoryProviderKeysRepository implements ProviderKeysRepository {
 
     this.rows.set(key, row);
     return this.toMeta(row);
+  }
+
+  async delete(userId: string, provider: string): Promise<boolean> {
+    return this.rows.delete(`${userId}:${provider}`);
   }
 }
