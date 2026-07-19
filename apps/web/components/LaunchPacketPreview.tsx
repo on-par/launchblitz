@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getMissingLandingPageSections, type LaunchPacket, type PacketSection } from "@launchblitz/workflow";
+import { PreviewLauncher } from "./PreviewLauncher";
 
 function SectionCard({ section }: { section: PacketSection }) {
   if (section.status === "approved") {
@@ -38,10 +39,12 @@ export function LaunchPacketPreview({
   packet,
   lovableHandoffHref,
   exportHrefs,
+  previewEndpoint,
 }: {
   packet: LaunchPacket;
   lovableHandoffHref?: string;
   exportHrefs?: { markdown: string; json: string; launchKit: string; landingPage: string };
+  previewEndpoint?: string;
 }) {
   const missingLandingPageSections = getMissingLandingPageSections(packet);
   return (
@@ -57,6 +60,16 @@ export function LaunchPacketPreview({
           </p>
         </div>
         <div className="flex flex-col items-end gap-3">
+          {previewEndpoint ? (
+            <PreviewLauncher
+              endpoint={previewEndpoint}
+              disabledReason={
+                missingLandingPageSections.length > 0
+                  ? `Approve ${missingLandingPageSections.join(", ")} to start a preview`
+                  : null
+              }
+            />
+          ) : null}
           {lovableHandoffHref ? (
             <Link
               href={lovableHandoffHref}
