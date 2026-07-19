@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { LogEntry, PreviewProgressPhase } from "@launchblitz/sandbox";
 import { getSession } from "../../../../../../lib/auth";
+import { getArtifactRevisionsRepository } from "../../../../../../lib/artifact-revisions";
 import { getBuildsRepository } from "../../../../../../lib/builds";
 import { getPreviewProgressStore, getPreviewStore, getSandboxAdapter } from "../../../../../../lib/sandbox";
 
@@ -24,7 +25,10 @@ function capLogs(logs: LogEntry[]): LogEntry[] {
  * - 401 when there is no authenticated founder.
  * - 404 for a missing record or one owned by another founder (deliberately
  *   identical — no ownership enumeration).
- * - 200 with `{ status: { phase, logs, url, expiresAt, error } }` otherwise.
+ * - 200 with `{ status: { phase, logs, url, expiresAt, error, revisionNumber,
+ *   latestRevisionNumber, stale } }` otherwise. Staleness/revision fields are
+ *   only meaningful while a preview is active — every other branch reports
+ *   them as null/false so the response shape stays uniform.
  */
 export async function GET(_request: Request, { params }: RouteParams) {
   const session = await getSession();
@@ -42,6 +46,10 @@ export async function GET(_request: Request, { params }: RouteParams) {
   const active = getPreviewStore().getActive(buildId, new Date());
 
   if (active) {
+    const latest = await getArtifactRevisionsRepository().getLatestForUser(buildId, session.userId);
+    const latestRevisionNumber = latest?.revisionNumber ?? null;
+    const stale = latestRevisionNumber !== null && latestRevisionNumber > active.revisionNumber;
+
     return NextResponse.json({
       status: {
         phase: "ready" satisfies PreviewStatusPhase,
@@ -49,13 +57,25 @@ export async function GET(_request: Request, { params }: RouteParams) {
         url: active.url,
         expiresAt: active.expiresAt,
         error: null,
+        revisionNumber: active.revisionNumber,
+        latestRevisionNumber,
+        stale,
       },
     });
   }
 
   if (!progress || progress.phase === "ready") {
     return NextResponse.json({
-      status: { phase: "idle" satisfies PreviewStatusPhase, logs: [], url: null, expiresAt: null, error: null },
+      status: {
+        phase: "idle" satisfies PreviewStatusPhase,
+        logs: [],
+        url: null,
+        expiresAt: null,
+        error: null,
+        revisionNumber: null,
+        latestRevisionNumber: null,
+        stale: false,
+      },
     });
   }
 
@@ -67,6 +87,9 @@ export async function GET(_request: Request, { params }: RouteParams) {
         url: null,
         expiresAt: null,
         error: progress.error,
+        revisionNumber: null,
+        latestRevisionNumber: null,
+        stale: false,
       },
     });
   }
@@ -82,6 +105,9 @@ export async function GET(_request: Request, { params }: RouteParams) {
       url: null,
       expiresAt: null,
       error: null,
+      revisionNumber: null,
+      latestRevisionNumber: null,
+      stale: false,
     },
   });
 }

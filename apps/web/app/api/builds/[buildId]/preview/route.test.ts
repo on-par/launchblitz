@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GET, POST } from "./route";
 import { getSession } from "../../../../../lib/auth";
+import { getArtifactRevisionsRepository } from "../../../../../lib/artifact-revisions";
 import { getBuildsRepository } from "../../../../../lib/builds";
 import { getStageOutputRecords } from "../../../../../lib/packet-data";
 
@@ -23,10 +24,15 @@ async function ownedBuild(userId: string) {
   return getBuildsRepository().create({ userId, seedIdea: "Tax tooling for creators" });
 }
 
-function post(buildId: string) {
-  return POST(new Request(`http://localhost/api/builds/${buildId}/preview`, { method: "POST" }), {
-    params: Promise.resolve({ buildId }),
-  });
+function post(buildId: string, body?: unknown) {
+  return POST(
+    new Request(`http://localhost/api/builds/${buildId}/preview`, {
+      method: "POST",
+      headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    }),
+    { params: Promise.resolve({ buildId }) },
+  );
 }
 
 function get(buildId: string) {
@@ -170,5 +176,56 @@ describe("build preview route", () => {
     const [first, second] = await Promise.all([firstResponse.json(), secondResponse.json()]);
 
     expect(first.preview).toEqual(second.preview);
+  });
+
+  it("creates baseline revision 1 on the first successful start", async () => {
+    mockedGetSession.mockResolvedValue({ userId: "user-a" });
+    mockedGetStageOutputRecords.mockResolvedValue(approvedRecords);
+    const build = await ownedBuild("user-a");
+
+    const response = await post(build.id);
+    expect(response.status).toBe(201);
+    const body = await response.json();
+    expect(body.preview.revisionNumber).toBe(1);
+
+    const revisions = await getArtifactRevisionsRepository().listForUser(build.id, "user-a");
+    expect(revisions.map((r) => r.revisionNumber)).toEqual([1]);
+    expect(revisions[0].editRequest).toBeNull();
+  });
+
+  it("returns the same revisionNumber on a second POST without restart", async () => {
+    mockedGetSession.mockResolvedValue({ userId: "user-a" });
+    mockedGetStageOutputRecords.mockResolvedValue(approvedRecords);
+    const build = await ownedBuild("user-a");
+
+    const first = await (await post(build.id)).json();
+    const secondResponse = await post(build.id);
+    expect(secondResponse.status).toBe(200);
+    const second = await secondResponse.json();
+
+    expect(second.preview.revisionNumber).toBe(first.preview.revisionNumber);
+  });
+
+  it("restart serves the latest revision's files and returns its revisionNumber", async () => {
+    mockedGetSession.mockResolvedValue({ userId: "user-a" });
+    mockedGetStageOutputRecords.mockResolvedValue(approvedRecords);
+    const build = await ownedBuild("user-a");
+
+    const first = await (await post(build.id)).json();
+    expect(first.preview.revisionNumber).toBe(1);
+
+    await getArtifactRevisionsRepository().createForUser(
+      {
+        buildId: build.id,
+        editRequest: "Make the hero CTA more direct",
+        artifact: { formatVersion: 1, files: [{ path: "index.html", contents: "<html>v2</html>" }] },
+      },
+      "user-a",
+    );
+
+    const restartResponse = await post(build.id, { restart: true });
+    expect(restartResponse.status).toBe(201);
+    const restartBody = await restartResponse.json();
+    expect(restartBody.preview.revisionNumber).toBe(2);
   });
 });

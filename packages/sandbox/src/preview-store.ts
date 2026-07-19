@@ -3,6 +3,7 @@ export interface PreviewRecord {
   workspaceId: string;
   url: string;
   expiresAt: string;
+  revisionNumber: number;
 }
 
 // In-memory registry of active previews. No DB migration: previews are
@@ -25,6 +26,12 @@ export class InMemoryPreviewStore {
       return null;
     }
     return record;
+  }
+
+  // Needed so a restart doesn't leave the status route reporting the old
+  // preview as ready mid-restart.
+  delete(buildId: string): void {
+    this.records.delete(buildId);
   }
 
   // Opportunistic cleanup so a long-running process doesn't accumulate one
