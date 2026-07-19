@@ -20,6 +20,9 @@
       "@launchblitz/db": [
         "packages/db/src/index.ts"
       ],
+      "@launchblitz/sandbox": [
+        "packages/sandbox/src/index.ts"
+      ],
       "@launchblitz/ui": [
         "packages/ui/src/index.ts"
       ],
