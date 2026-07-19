@@ -1,16 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PreviewEditRequestPanel } from "./PreviewEditRequestPanel";
 
 export interface PreviewLauncherProps {
   endpoint: string;
   disabledReason?: string | null;
+  editRequestsEndpoint?: string | null;
 }
 
 type LauncherState =
   | { kind: "idle" }
   | { kind: "starting"; phase: string; logs: string[] }
-  | { kind: "ready"; url: string; expiresAt: string }
+  | {
+      kind: "ready";
+      url: string;
+      expiresAt: string;
+      revisionNumber: number | null;
+      stale: boolean;
+      latestRevisionNumber: number | null;
+    }
   | { kind: "failed"; error: string; logs: string[] };
 
 const LINK_CLASSNAME =
@@ -50,6 +59,9 @@ interface StatusResponseBody {
     url: string | null;
     expiresAt: string | null;
     error: string | null;
+    revisionNumber: number | null;
+    latestRevisionNumber: number | null;
+    stale: boolean;
   };
 }
 
@@ -57,7 +69,7 @@ function toLogMessages(logs: Array<{ message: string }>): string[] {
   return logs.map((entry) => entry.message);
 }
 
-export function PreviewLauncher({ endpoint, disabledReason }: PreviewLauncherProps) {
+export function PreviewLauncher({ endpoint, disabledReason, editRequestsEndpoint }: PreviewLauncherProps) {
   const [state, setState] = useState<LauncherState>({ kind: "idle" });
 
   useEffect(() => {
@@ -75,7 +87,14 @@ export function PreviewLauncher({ endpoint, disabledReason }: PreviewLauncherPro
         const { status } = body;
 
         if (status.phase === "ready" && status.url && status.expiresAt) {
-          setState({ kind: "ready", url: status.url, expiresAt: status.expiresAt });
+          setState({
+            kind: "ready",
+            url: status.url,
+            expiresAt: status.expiresAt,
+            revisionNumber: status.revisionNumber,
+            stale: status.stale,
+            latestRevisionNumber: status.latestRevisionNumber,
+          });
         } else if (status.phase === "failed") {
           setState({ kind: "failed", error: status.error ?? "Failed to start the preview.", logs: toLogMessages(status.logs) });
         } else if (status.phase !== "idle") {
@@ -107,7 +126,14 @@ export function PreviewLauncher({ endpoint, disabledReason }: PreviewLauncherPro
           const { status } = body;
 
           if (status.phase === "ready" && status.url && status.expiresAt) {
-            setState({ kind: "ready", url: status.url, expiresAt: status.expiresAt });
+            setState({
+              kind: "ready",
+              url: status.url,
+              expiresAt: status.expiresAt,
+              revisionNumber: status.revisionNumber,
+              stale: status.stale,
+              latestRevisionNumber: status.latestRevisionNumber,
+            });
           } else if (status.phase === "failed") {
             setState({
               kind: "failed",
@@ -148,11 +174,16 @@ export function PreviewLauncher({ endpoint, disabledReason }: PreviewLauncherPro
     );
   }
 
-  async function handleStart() {
+  async function handleStart(restart = false) {
     setState({ kind: "starting", phase: "creating-workspace", logs: [] });
 
     try {
-      const res = await fetch(endpoint, { method: "POST" });
+      const res = await fetch(endpoint, {
+        method: "POST",
+        ...(restart
+          ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify({ restart: true }) }
+          : {}),
+      });
       const body = await res.json();
 
       if (res.status !== 200 && res.status !== 201) {
@@ -164,7 +195,14 @@ export function PreviewLauncher({ endpoint, disabledReason }: PreviewLauncherPro
         return;
       }
 
-      setState({ kind: "ready", url: body.preview.url, expiresAt: body.preview.expiresAt });
+      setState({
+        kind: "ready",
+        url: body.preview.url,
+        expiresAt: body.preview.expiresAt,
+        revisionNumber: body.preview.revisionNumber ?? null,
+        stale: false,
+        latestRevisionNumber: null,
+      });
     } catch {
       const logs = await fetch(`${endpoint}/status`)
         .then((statusRes) => (statusRes.status === 200 ? statusRes.json() : null))
@@ -176,13 +214,33 @@ export function PreviewLauncher({ endpoint, disabledReason }: PreviewLauncherPro
 
   if (state.kind === "ready") {
     return (
-      <div className="flex flex-wrap items-center gap-3">
-        <a href={state.url} target="_blank" rel="noreferrer" className={LINK_CLASSNAME}>
-          Open live preview
-        </a>
-        <span className="text-xs text-[#CFD8DC]/50">
-          Expires at {new Date(state.expiresAt).toLocaleTimeString()}
-        </span>
+      <div className="flex w-full max-w-md flex-col items-end gap-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <a href={state.url} target="_blank" rel="noreferrer" className={LINK_CLASSNAME}>
+            Open live preview
+          </a>
+          <span className="text-xs text-[#CFD8DC]/50">
+            Expires at {new Date(state.expiresAt).toLocaleTimeString()}
+          </span>
+        </div>
+        {state.stale ? (
+          <div role="status" className="flex flex-wrap items-center justify-end gap-3">
+            <p className="text-xs text-[#CFD8DC]/50">
+              Preview is stale — showing revision {state.revisionNumber}, latest is {state.latestRevisionNumber}.
+            </p>
+            <button type="button" onClick={() => handleStart(true)} className={LINK_CLASSNAME}>
+              Restart preview from latest
+            </button>
+          </div>
+        ) : null}
+        {editRequestsEndpoint ? (
+          <PreviewEditRequestPanel
+            endpoint={editRequestsEndpoint}
+            onRevisionCreated={(n) =>
+              setState((prev) => (prev.kind === "ready" ? { ...prev, stale: true, latestRevisionNumber: n } : prev))
+            }
+          />
+        ) : null}
       </div>
     );
   }
@@ -209,7 +267,7 @@ export function PreviewLauncher({ endpoint, disabledReason }: PreviewLauncherPro
           {state.error}
         </p>
         <LogsBlock logs={state.logs} open />
-        <button type="button" onClick={handleStart} className={LINK_CLASSNAME}>
+        <button type="button" onClick={() => handleStart()} className={LINK_CLASSNAME}>
           Retry preview
         </button>
       </div>
@@ -220,7 +278,7 @@ export function PreviewLauncher({ endpoint, disabledReason }: PreviewLauncherPro
     <div className="flex flex-wrap items-center gap-3">
       <button
         type="button"
-        onClick={handleStart}
+        onClick={() => handleStart()}
         className={`${LINK_CLASSNAME} disabled:cursor-not-allowed disabled:opacity-50`}
       >
         Start preview

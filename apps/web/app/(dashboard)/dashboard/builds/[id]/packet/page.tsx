@@ -17,6 +17,7 @@ export default async function PacketPage({ params }: { params: Promise<{ id: str
         landingPage: `/api/builds/${id}/landing-page/export`,
       }}
       previewEndpoint={`/api/builds/${id}/preview`}
+      editRequestsEndpoint={`/api/builds/${id}/artifact-revisions`}
     />
   );
 }

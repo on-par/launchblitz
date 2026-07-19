@@ -20,6 +20,19 @@ export const stageOutputs = pgTable("stage_outputs", {
   approvedAt: timestamp("approved_at"),
 });
 
+export const artifactRevisions = pgTable(
+  "artifact_revisions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    buildId: uuid("build_id").references(() => builds.id),
+    revisionNumber: integer("revision_number").notNull(),
+    editRequest: text("edit_request"),
+    artifact: jsonb("artifact").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => [uniqueIndex("artifact_revisions_build_revision_unique").on(t.buildId, t.revisionNumber)],
+);
+
 export const providerKeys = pgTable(
   "provider_keys",
   {

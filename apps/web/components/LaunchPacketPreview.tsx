@@ -40,11 +40,13 @@ export function LaunchPacketPreview({
   lovableHandoffHref,
   exportHrefs,
   previewEndpoint,
+  editRequestsEndpoint,
 }: {
   packet: LaunchPacket;
   lovableHandoffHref?: string;
   exportHrefs?: { markdown: string; json: string; launchKit: string; landingPage: string };
   previewEndpoint?: string;
+  editRequestsEndpoint?: string;
 }) {
   const missingLandingPageSections = getMissingLandingPageSections(packet);
   return (
@@ -68,6 +70,7 @@ export function LaunchPacketPreview({
                   ? `Approve ${missingLandingPageSections.join(", ")} to start a preview`
                   : null
               }
+              editRequestsEndpoint={editRequestsEndpoint}
             />
           ) : null}
           {lovableHandoffHref ? (

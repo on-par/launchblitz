@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "./route";
 import { POST } from "../route";
 import { getSession } from "../../../../../../lib/auth";
+import { getArtifactRevisionsRepository } from "../../../../../../lib/artifact-revisions";
 import { getBuildsRepository } from "../../../../../../lib/builds";
 import { getStageOutputRecords } from "../../../../../../lib/packet-data";
 
@@ -108,7 +109,16 @@ describe("build preview status route", () => {
     const response = await getStatus(build.id);
     expect(response.status).toBe(200);
     const body = await response.json();
-    expect(body.status).toEqual({ phase: "idle", logs: [], url: null, expiresAt: null, error: null });
+    expect(body.status).toEqual({
+      phase: "idle",
+      logs: [],
+      url: null,
+      expiresAt: null,
+      error: null,
+      revisionNumber: null,
+      latestRevisionNumber: null,
+      stale: false,
+    });
   });
 
   it("returns phase ready with the preview url and logs after a successful start", async () => {
@@ -125,6 +135,44 @@ describe("build preview status route", () => {
     expect(body.status.phase).toBe("ready");
     expect(body.status.url).toBe(postBody.preview.url);
     expect(body.status.logs.length).toBeGreaterThan(0);
+  });
+
+  it("reports stale: false and the current revisionNumber when serving the latest revision", async () => {
+    mockedGetSession.mockResolvedValue({ userId: "user-a" });
+    mockedGetStageOutputRecords.mockResolvedValue(approvedRecords);
+    const build = await ownedBuild("user-a");
+
+    await post(build.id);
+
+    const response = await getStatus(build.id);
+    const body = await response.json();
+
+    expect(body.status.revisionNumber).toBe(1);
+    expect(body.status.latestRevisionNumber).toBe(1);
+    expect(body.status.stale).toBe(false);
+  });
+
+  it("reports stale: true once a newer revision exists than the one being served", async () => {
+    mockedGetSession.mockResolvedValue({ userId: "user-a" });
+    mockedGetStageOutputRecords.mockResolvedValue(approvedRecords);
+    const build = await ownedBuild("user-a");
+
+    await post(build.id);
+    await getArtifactRevisionsRepository().createForUser(
+      {
+        buildId: build.id,
+        editRequest: "Make the hero CTA more direct",
+        artifact: { formatVersion: 1, files: [{ path: "index.html", contents: "<html>v2</html>" }] },
+      },
+      "user-a",
+    );
+
+    const response = await getStatus(build.id);
+    const body = await response.json();
+
+    expect(body.status.revisionNumber).toBe(1);
+    expect(body.status.latestRevisionNumber).toBe(2);
+    expect(body.status.stale).toBe(true);
   });
 
   it("reports a forced serve failure as phase failed with logs and an error", async () => {
