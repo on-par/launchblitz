@@ -12,16 +12,14 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-MARKER="lb-spike-marker: 49"
+MARKER="$(grep -o 'lb-spike-marker: [0-9]*' sample-artifact/index.html)"
 WS_NAME="lb-spike-$$"
 WORKDIR=""
 PORT=""
 
 step() {
-  local label="$1"
-  shift
   echo ""
-  echo "▶ ${label}"
+  echo "▶ ${1}"
 }
 
 cleanup() {
