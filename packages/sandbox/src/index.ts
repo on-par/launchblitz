@@ -4,3 +4,4 @@ export * from "./vercel-adapter";
 export * from "./static-server";
 export * from "./static-preview";
 export * from "./preview-store";
+export * from "./preview-progress";
