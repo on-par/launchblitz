@@ -16,3 +16,4 @@ export * from "./types";
 export * from "./packet";
 export * from "./lovable-handoff";
 export * from "./packet-export";
+export * from "./landing-page";

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { LaunchPacket, PacketSection } from "@launchblitz/workflow";
+import { getMissingLandingPageSections, type LaunchPacket, type PacketSection } from "@launchblitz/workflow";
 
 function SectionCard({ section }: { section: PacketSection }) {
   if (section.status === "approved") {
@@ -31,6 +31,9 @@ function SectionCard({ section }: { section: PacketSection }) {
 const DOWNLOAD_LINK_CLASSNAME =
   "rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-sm font-semibold text-[#ECEFF1]/80 transition hover:border-[#FF4D00]/30 hover:bg-[#FF4D00]/10 hover:text-white";
 
+const DOWNLOAD_LINK_DISABLED_CLASSNAME =
+  "rounded-full border border-white/10 bg-white/[0.02] px-4 py-2 text-sm font-semibold text-[#ECEFF1]/40";
+
 export function LaunchPacketPreview({
   packet,
   lovableHandoffHref,
@@ -38,8 +41,9 @@ export function LaunchPacketPreview({
 }: {
   packet: LaunchPacket;
   lovableHandoffHref?: string;
-  exportHrefs?: { markdown: string; json: string; launchKit: string };
+  exportHrefs?: { markdown: string; json: string; launchKit: string; landingPage: string };
 }) {
+  const missingLandingPageSections = getMissingLandingPageSections(packet);
   return (
     <section className="space-y-8">
       <header className="flex items-start justify-between gap-4">
@@ -72,6 +76,18 @@ export function LaunchPacketPreview({
               <a href={exportHrefs.launchKit} className={DOWNLOAD_LINK_CLASSNAME}>
                 Download Launch Kit
               </a>
+              {missingLandingPageSections.length === 0 ? (
+                <a href={exportHrefs.landingPage} className={DOWNLOAD_LINK_CLASSNAME}>
+                  Download landing page (ZIP)
+                </a>
+              ) : (
+                <span
+                  className={DOWNLOAD_LINK_DISABLED_CLASSNAME}
+                  title={`Approve ${missingLandingPageSections.join(", ")} to generate the landing page`}
+                >
+                  Download landing page (ZIP)
+                </span>
+              )}
             </div>
           ) : null}
         </div>

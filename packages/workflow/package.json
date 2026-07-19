@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "latest",
+    "fflate": "latest",
     "openai": "latest",
     "zod": "latest"
   },
