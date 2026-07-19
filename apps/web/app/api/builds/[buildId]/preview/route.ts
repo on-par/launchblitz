@@ -4,7 +4,7 @@ import { assembleLaunchPacket, buildLandingPageArtifact, getMissingLandingPageSe
 import { getSession } from "../../../../../lib/auth";
 import { getBuildsRepository } from "../../../../../lib/builds";
 import { getStageOutputRecords } from "../../../../../lib/packet-data";
-import { getPreviewStore, getSandboxAdapter } from "../../../../../lib/sandbox";
+import { getPreviewProgressStore, getPreviewStore, getSandboxAdapter } from "../../../../../lib/sandbox";
 
 // Constructs the sandbox adapter with real provider credentials — Node.js runtime.
 export const runtime = "nodejs";
@@ -24,11 +24,13 @@ function startPreview(buildId: string, files: SandboxFile[]): Promise<StaticPrev
   if (pending) {
     return pending;
   }
+  getPreviewProgressStore().begin(buildId);
   const promise = startStaticSitePreview(getSandboxAdapter(), {
     files,
     label: buildId,
     ttlMs: DEFAULT_PREVIEW_TTL_MS,
     now: new Date(),
+    onProgress: (event) => getPreviewProgressStore().setPhase(buildId, event.phase, event.workspaceId ?? undefined),
   }).finally(() => inFlightPreviews.delete(buildId));
   inFlightPreviews.set(buildId, promise);
   return promise;
@@ -86,9 +88,22 @@ export async function POST(_request: Request, { params }: RouteParams) {
       expiresAt: preview.expiresAt,
     });
 
+    const logs = await getSandboxAdapter().readLogs(preview.workspaceId).catch(() => []);
+    getPreviewProgressStore().markReady(buildId, logs);
+
     return NextResponse.json({ preview: { url: preview.url, expiresAt: preview.expiresAt } }, { status: 201 });
   } catch (error) {
     console.error("[preview] Failed to start sandbox preview", error);
+
+    const progress = getPreviewProgressStore().get(buildId);
+    const workspaceId = progress?.workspaceId ?? null;
+    const logs = workspaceId ? await getSandboxAdapter().readLogs(workspaceId).catch(() => []) : [];
+    getPreviewProgressStore().markFailed(buildId, "The preview server failed to start.", logs);
+    if (workspaceId) {
+      // Best-effort teardown so a retry never stacks a second live sandbox on a dead one.
+      await getSandboxAdapter().destroyWorkspace(workspaceId).catch(() => {});
+    }
+
     return NextResponse.json({ error: "Could not start the preview sandbox." }, { status: 502 });
   }
 }

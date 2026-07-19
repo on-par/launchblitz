@@ -1,4 +1,10 @@
-import { InMemoryPreviewStore, InMemorySandboxAdapter, VercelSandboxAdapter, type SandboxAdapter } from "@launchblitz/sandbox";
+import {
+  InMemoryPreviewProgressStore,
+  InMemoryPreviewStore,
+  InMemorySandboxAdapter,
+  VercelSandboxAdapter,
+  type SandboxAdapter,
+} from "@launchblitz/sandbox";
 
 // Survive Next.js dev/HMR module reloads, same rationale as apps/web/lib/builds.ts.
 // Cached as the SandboxAdapter interface (not a specific impl) because
@@ -8,6 +14,7 @@ import { InMemoryPreviewStore, InMemorySandboxAdapter, VercelSandboxAdapter, typ
 const globalStore = globalThis as typeof globalThis & {
   __launchblitzSandboxAdapter?: SandboxAdapter;
   __launchblitzPreviewStore?: InMemoryPreviewStore;
+  __launchblitzPreviewProgressStore?: InMemoryPreviewProgressStore;
 };
 
 export function isSandboxConfigured(): boolean {
@@ -53,4 +60,11 @@ export function getPreviewStore(): InMemoryPreviewStore {
     globalStore.__launchblitzPreviewStore = new InMemoryPreviewStore();
   }
   return globalStore.__launchblitzPreviewStore;
+}
+
+export function getPreviewProgressStore(): InMemoryPreviewProgressStore {
+  if (!globalStore.__launchblitzPreviewProgressStore) {
+    globalStore.__launchblitzPreviewProgressStore = new InMemoryPreviewProgressStore();
+  }
+  return globalStore.__launchblitzPreviewProgressStore;
 }
