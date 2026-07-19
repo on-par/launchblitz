@@ -16,6 +16,7 @@ export default async function PacketPage({ params }: { params: Promise<{ id: str
         launchKit: `/api/builds/${id}/launch-kit/export`,
         landingPage: `/api/builds/${id}/landing-page/export`,
       }}
+      previewEndpoint={`/api/builds/${id}/preview`}
     />
   );
 }

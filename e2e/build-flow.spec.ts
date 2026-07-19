@@ -29,4 +29,6 @@ test("launch packet preview compiles approved outputs and flags gaps", async ({ 
   // violation while still proving the title renders.
   await expect(page.getByText("Launch Kit").first()).toBeVisible();
   await expect(page.getByText("Landing Page Export").first()).toBeVisible();
+  // The demo packet's copy-deck is unapproved, so the preview control renders disabled.
+  await expect(page.getByText("Start preview")).toBeVisible();
 });

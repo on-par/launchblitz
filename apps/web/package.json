@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@launchblitz/db": "0.0.0",
+    "@launchblitz/sandbox": "0.0.0",
     "@launchblitz/ui": "0.0.0",
     "@launchblitz/workflow": "0.0.0",
     "@clerk/nextjs": "latest",
