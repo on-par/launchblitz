@@ -33,6 +33,16 @@ export const artifactRevisions = pgTable(
   (t) => [uniqueIndex("artifact_revisions_build_revision_unique").on(t.buildId, t.revisionNumber)],
 );
 
+export const waitlistSignups = pgTable(
+  "waitlist_signups",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => [uniqueIndex("waitlist_signups_email_unique").on(t.email)],
+);
+
 export const providerKeys = pgTable(
   "provider_keys",
   {
