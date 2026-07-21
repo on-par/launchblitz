@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { resolveSiteMode } from "../../lib/site-mode";
+import { ComingSoonWaitlistPage } from "./ComingSoonWaitlistPage";
 import { MarketingLandingPage } from "./MarketingLandingPage";
 
 const AUTH_COOKIE_MARKERS = ["__session", "__client_uat", "clerk", "launchblitz_session"];
@@ -23,5 +24,5 @@ export default async function MarketingPage() {
     return <MarketingLandingPage />;
   }
 
-  return <h1>Coming soon</h1>;
+  return <ComingSoonWaitlistPage />;
 }

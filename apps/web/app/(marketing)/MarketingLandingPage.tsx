@@ -4,34 +4,10 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { LaunchBlitzWordmark } from "../../components/LaunchBlitzWordmark";
 import { START_BUILD_PATH } from "../../lib/session";
+import { deliverables, workflowSteps } from "./copy";
+import { InlineWaitlist } from "./InlineWaitlist";
 
 const painPoints = ["Too many tools.", "Hours of research.", "Blank page paralysis."];
-
-const workflowSteps = [
-  {
-    eyebrow: "Drop your idea",
-    title: "Start with one clear business concept and your own AI keys.",
-    body: "Give LaunchBlitz the idea in plain English and begin the session without stitching together a dozen tools by hand.",
-  },
-  {
-    eyebrow: "Guided research",
-    title: "LaunchBlitz structures the heavy early-stage business work into one guided sequence.",
-    body: "You get Market Validation, Customer Avatar, Copy Deck, Landing Page Export, and a Launch Kit in one structured flow.",
-  },
-  {
-    eyebrow: "Review, approve, launch",
-    title: "You stay in control while the system removes the busywork.",
-    body: "Refine the outputs, approve what works, and move into launch mode with real assets instead of an empty page.",
-  },
-];
-
-const deliverables = [
-  "Market Validation",
-  "Customer Avatar",
-  "Copy Deck",
-  "Landing Page Export",
-  "Launch Kit",
-];
 
 const pricingTiers = [
   {
@@ -106,86 +82,6 @@ function StartBuildLink({
     <Link className={className} href={START_BUILD_PATH}>
       {label}
     </Link>
-  );
-}
-
-export function InlineWaitlist({
-  triggerLabel,
-  triggerClassName,
-}: {
-  triggerLabel: string;
-  triggerClassName: string;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState(false);
-  const [email, setEmail] = useState("");
-
-  return (
-    <div className="w-full max-w-md">
-      <button className={triggerClassName} onClick={() => setIsOpen(true)} type="button">
-        {triggerLabel}
-      </button>
-      {isOpen ? (
-        <div className="mt-4 rounded-[1.6rem] border border-[#FF4D00]/15 bg-[#f7f7f6] p-4 text-left text-black shadow-[0_22px_60px_rgba(0,0,0,0.28)]">
-          {isSubmitted ? (
-            <p className="text-sm font-semibold tracking-[-0.02em]">You&apos;re on the list!</p>
-          ) : (
-            <>
-              <form
-                className="flex flex-col gap-3 sm:flex-row"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  setError(false);
-                  setIsSubmitting(true);
-                  fetch("/api/waitlist", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email }),
-                  })
-                    .then((response) => {
-                      if (response.ok) {
-                        setIsSubmitted(true);
-                      } else {
-                        setError(true);
-                      }
-                    })
-                    .catch(() => {
-                      setError(true);
-                    })
-                    .finally(() => {
-                      setIsSubmitting(false);
-                    });
-                }}
-              >
-                <input
-                  aria-label="Email address"
-                  className="h-12 flex-1 rounded-full border border-black/10 bg-white px-4 text-sm outline-none transition focus:border-[#FF4D00]"
-                  onChange={(event) => setEmail(event.target.value)}
-                  placeholder="Email address"
-                  required
-                  type="email"
-                  value={email}
-                />
-                <button
-                  className="h-12 rounded-full bg-[#FF4D00] px-5 text-sm font-semibold text-white transition hover:bg-[#e94700] disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={isSubmitting}
-                  type="submit"
-                >
-                  {isSubmitting ? "Joining…" : "Join waitlist"}
-                </button>
-              </form>
-              {error ? (
-                <p className="mt-2 text-xs text-[#FF4D00]">
-                  Something went wrong — please try again.
-                </p>
-              ) : null}
-            </>
-          )}
-        </div>
-      ) : null}
-    </div>
   );
 }
 
