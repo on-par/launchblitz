@@ -84,7 +84,7 @@ const faqs = [
   {
     question: "Is my data private?",
     answer:
-      "Your work stays tied to your workspace and your own model keys. The waitlist capture on this page is local UI state only and does not hit a backend.",
+      "Your work stays tied to your workspace and your own model keys. Waitlist signups are stored securely and only used to notify you about LaunchBlitz.",
   },
 ];
 
@@ -109,7 +109,7 @@ function StartBuildLink({
   );
 }
 
-function InlineWaitlist({
+export function InlineWaitlist({
   triggerLabel,
   triggerClassName,
 }: {
@@ -118,6 +118,8 @@ function InlineWaitlist({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(false);
   const [email, setEmail] = useState("");
 
   return (
@@ -130,29 +132,56 @@ function InlineWaitlist({
           {isSubmitted ? (
             <p className="text-sm font-semibold tracking-[-0.02em]">You&apos;re on the list!</p>
           ) : (
-            <form
-              className="flex flex-col gap-3 sm:flex-row"
-              onSubmit={(event) => {
-                event.preventDefault();
-                setIsSubmitted(true);
-              }}
-            >
-              <input
-                aria-label="Email address"
-                className="h-12 flex-1 rounded-full border border-black/10 bg-white px-4 text-sm outline-none transition focus:border-[#FF4D00]"
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="Email address"
-                required
-                type="email"
-                value={email}
-              />
-              <button
-                className="h-12 rounded-full bg-[#FF4D00] px-5 text-sm font-semibold text-white transition hover:bg-[#e94700]"
-                type="submit"
+            <>
+              <form
+                className="flex flex-col gap-3 sm:flex-row"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  setError(false);
+                  setIsSubmitting(true);
+                  fetch("/api/waitlist", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email }),
+                  })
+                    .then((response) => {
+                      if (response.ok) {
+                        setIsSubmitted(true);
+                      } else {
+                        setError(true);
+                      }
+                    })
+                    .catch(() => {
+                      setError(true);
+                    })
+                    .finally(() => {
+                      setIsSubmitting(false);
+                    });
+                }}
               >
-                Join waitlist
-              </button>
-            </form>
+                <input
+                  aria-label="Email address"
+                  className="h-12 flex-1 rounded-full border border-black/10 bg-white px-4 text-sm outline-none transition focus:border-[#FF4D00]"
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="Email address"
+                  required
+                  type="email"
+                  value={email}
+                />
+                <button
+                  className="h-12 rounded-full bg-[#FF4D00] px-5 text-sm font-semibold text-white transition hover:bg-[#e94700] disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={isSubmitting}
+                  type="submit"
+                >
+                  {isSubmitting ? "Joining…" : "Join waitlist"}
+                </button>
+              </form>
+              {error ? (
+                <p className="mt-2 text-xs text-[#FF4D00]">
+                  Something went wrong — please try again.
+                </p>
+              ) : null}
+            </>
           )}
         </div>
       ) : null}
