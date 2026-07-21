@@ -24,7 +24,13 @@ function devServer(port: number, mode: "live" | "waitlist") {
     url: `http://127.0.0.1:${port}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
-    env: { ...SHARED_ENV, NEXT_PUBLIC_SITE_MODE: mode },
+    env: {
+      ...SHARED_ENV,
+      NEXT_PUBLIC_SITE_MODE: mode,
+      // Separate build dirs: Next refuses to start a second dev server that
+      // shares a build dir with a running one.
+      NEXT_DIST_DIR: `.next-e2e-${mode}`,
+    },
   };
 }
 
