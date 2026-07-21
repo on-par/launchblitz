@@ -15,6 +15,13 @@ export default defineConfig({
     url: "http://127.0.0.1:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
-    env: { PROVIDER_KEY_ENCRYPTION_KEY: "e2e-only-encryption-secret" },
+    env: {
+      PROVIDER_KEY_ENCRYPTION_KEY: "e2e-only-encryption-secret",
+      // Site mode fails safe to "waitlist" (see apps/web/lib/site-mode.ts), which
+      // is the intended product default. The existing specs assert the live
+      // marketing page, so pin the e2e server to live mode explicitly. Waitlist
+      // mode gets its own coverage in #60.
+      NEXT_PUBLIC_SITE_MODE: "live",
+    },
   },
 });
