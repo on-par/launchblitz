@@ -3,8 +3,8 @@
 import { useState } from "react";
 
 export function InlineWaitlist({
-  triggerLabel,
-  triggerClassName,
+  triggerLabel = "Join waitlist",
+  triggerClassName = "",
   defaultOpen = false,
   fieldLabel = "Email address",
   submitLabel = "Join waitlist",

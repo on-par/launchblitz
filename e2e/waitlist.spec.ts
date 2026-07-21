@@ -21,9 +21,12 @@ test.describe("waitlist mode", () => {
     await page.goto("/");
     // Waitlist mode must never expose live-only surfaces: pricing, or links
     // into auth/billing/app routes that are not ready for public traffic.
+    await expect(page.locator("#pricing")).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Start for free" })).toHaveCount(0);
     await expect(page.getByText("$29/mo")).toHaveCount(0);
+    await expect(page.getByText("$79/mo")).toHaveCount(0);
     await expect(page.getByText("Simple. Cancel anytime.")).toHaveCount(0);
+    await expect(page.getByText("Unlimited + team")).toHaveCount(0);
 
     for (const path of ["/sign-in", "/sign-up", "/builds", "/dashboard", "/settings"]) {
       await expect(page.locator(`a[href^="${path}"]`)).toHaveCount(0);
