@@ -27,12 +27,18 @@ class ResendEmailSender implements EmailSender {
   async sendWaitlistConfirmation(email: string): Promise<void> {
     // onboarding@resend.dev is Resend's default sandbox-verified sender.
     // Swapping to a verified project domain is a fast-follow.
-    await this.getClient().emails.send({
+    const { error } = await this.getClient().emails.send({
       from: "LaunchBlitz <onboarding@resend.dev>",
       to: email,
       subject: "You're on the LaunchBlitz waitlist",
       text: "Thanks for joining — you're on the list. We'll email you when it's your turn.",
     });
+    // The Resend SDK resolves (rather than rejects) on API-level failures
+    // (bad key, unverified domain, suppressed recipient) — throw so the
+    // route's existing catch/log handling covers this case too.
+    if (error) {
+      throw new Error(`Resend API error: ${error.message}`);
+    }
   }
 }
 

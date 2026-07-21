@@ -10,6 +10,13 @@ vi.mock("../../../lib/email", () => ({
 
 const mockedGetEmailSender = vi.mocked(getEmailSender);
 
+// The route resolves the real in-memory waitlist repository (a globalThis
+// singleton, same pattern as apps/web/lib/builds.ts), so reset it between
+// tests to keep each case's email lookups isolated.
+const globalStore = globalThis as typeof globalThis & {
+  __launchblitzWaitlistSignupsRepo?: unknown;
+};
+
 function post(body: unknown) {
   return POST(
     new Request("http://localhost", {
@@ -28,6 +35,7 @@ function mockEmailSender() {
 
 beforeEach(() => {
   mockedGetEmailSender.mockReset();
+  delete globalStore.__launchblitzWaitlistSignupsRepo;
 });
 
 describe("waitlist route", () => {

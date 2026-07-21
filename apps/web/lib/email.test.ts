@@ -74,4 +74,17 @@ describe("getEmailSender", () => {
       }),
     );
   });
+
+  it("throws when Resend resolves with an API-level error, instead of silently succeeding", async () => {
+    process.env.RESEND_API_KEY = "re_test_key";
+    sendMock.mockResolvedValueOnce({
+      data: null,
+      error: { message: "domain not verified", statusCode: 403, name: "validation_error" },
+    });
+    const { getEmailSender } = await import("./email");
+
+    await expect(getEmailSender().sendWaitlistConfirmation("founder@example.com")).rejects.toThrow(
+      "domain not verified",
+    );
+  });
 });
